@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 34c-4.1 0-7.5-3.3-7.5-7.4 0-4 3.2-7.3 7.2-7.5 1-5 5.4-8.8 10.6-8.8 6 0 10.9 4.9 10.9 10.9 0 .3 0 .6-.1.9 4.7.5 8.3 4.6 8.3 9.2 0 1.1-.2 1.7-.5 2.6-.3.1-.7.1-1 .1H16z"></path>
+    <g stroke-linecap="round">
+      <line x1="19" y1="44" x2="19" y2="50"></line>
+      <line x1="16" y1="47" x2="22" y2="47"></line>
+      <line x1="17" y1="45" x2="21" y2="49"></line>
+      <line x1="21" y1="45" x2="17" y2="49"></line>
+      <line x1="32" y1="46" x2="32" y2="52"></line>
+      <line x1="29" y1="49" x2="35" y2="49"></line>
+      <line x1="30" y1="47" x2="34" y2="51"></line>
+      <line x1="34" y1="47" x2="30" y2="51"></line>
+      <line x1="45" y1="44" x2="45" y2="50"></line>
+      <line x1="42" y1="47" x2="48" y2="47"></line>
+      <line x1="43" y1="45" x2="47" y2="49"></line>
+      <line x1="47" y1="45" x2="43" y2="49"></line>
+    </g></svg>

@@ -138,6 +138,9 @@ let project = Project(
             deploymentTargets: .iOS("17.0"),
             sources: [
                 "Projects/DesignSystem/Sources/**"
+            ],
+            resources: [
+                "Projects/DesignSystem/Resources/**"
             ]
         ),
 
