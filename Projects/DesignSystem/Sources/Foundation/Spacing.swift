@@ -2,15 +2,19 @@ import CoreFoundation
 
 public enum NCSpacing {
     /// 기본 패딩 단위 (7pt)
-    public static let base: CGFloat    = 7
-    /// 소형 간격 (14pt = base × 2)
-    public static let small: CGFloat   = 14
+    public static let base: CGFloat      = 7
+    /// 소형 간격 (10pt)
+    public static let small: CGFloat     = 10
+    /// 카드 내부 패딩 (16pt)
+    public static let cardInner: CGFloat = 16
+    /// 섹션 간 세로 간격 (18pt)
+    public static let section: CGFloat   = 18
+    /// 화면 좌우 여백 (20pt)
+    public static let screenH: CGFloat   = 20
     /// 중형 간격 (24pt)
-    public static let medium: CGFloat  = 24
+    public static let medium: CGFloat    = 24
     /// 대형 간격 (28pt)
-    public static let large: CGFloat   = 28
-    /// 화면 가장자리 여백 (24pt)
-    public static let screenH: CGFloat = 24
+    public static let large: CGFloat     = 28
     /// 섹션 상단 여백 (32pt)
     public static let sectionTop: CGFloat = 32
 }

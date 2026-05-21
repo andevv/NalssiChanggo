@@ -64,7 +64,7 @@ public extension Color {
 // MARK: - Hex Initializer
 
 extension Color {
-    init(hex: UInt32, opacity: Double = 1) {
+    public init(hex: UInt32, opacity: Double = 1) {
         self.init(
             .sRGB,
             red:     Double((hex >> 16) & 0xFF) / 255,
