@@ -1,12 +1,18 @@
 import ProjectDescription
 
+private let appGroupId = "group.com.andev.nalssichanggo"
+private let devTeam: SettingValue = "L3KYP426WW"
+
 let project = Project(
     name: "NalssiChanggo",
     organizationName: "andev",
     targets: [
+
+        // MARK: - App
+
         .target(
             name: "NalssiChanggo",
-            destinations: .iOS,
+            destinations: [.iPhone],
             product: .app,
             bundleId: "com.andev.nalssichanggo",
             deploymentTargets: .iOS("17.0"),
@@ -16,6 +22,13 @@ let project = Project(
                         "UIColorName": "",
                         "UIImageName": "",
                     ],
+                    "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"],
+                    "UIUserInterfaceStyle": "Light",
+                    // Location
+                    "NSLocationWhenInUseUsageDescription": "날씨 정보를 제공하기 위해 현재 위치를 사용합니다.",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription": "백그라운드에서도 날씨 정보를 갱신하기 위해 위치를 사용합니다.",
+                    // Push Notification & Background fetch
+                    "UIBackgroundModes": ["remote-notification", "fetch"],
                 ]
             ),
             sources: [
@@ -24,21 +37,36 @@ let project = Project(
             resources: [
                 "Projects/App/Resources/**"
             ],
+            entitlements: .dictionary([
+                // WeatherKit
+                "com.apple.developer.weatherkit": .boolean(true),
+                // Push Notification — 배포 시 "production"으로 변경
+                "aps-environment": .string("development"),
+                // App Groups — Widget과 데이터 공유
+                "com.apple.security.application-groups": .array([.string(appGroupId)]),
+            ]),
             dependencies: [
+                .target(name: "NalssiChanggoWidget"),
                 .target(name: "Core"),
                 .target(name: "WeatherDomain"),
                 .target(name: "WeatherData"),
                 .target(name: "WeatherEnsemble"),
                 .target(name: "Location"),
-                .target(name: "DesignSystem")
+                .target(name: "DesignSystem"),
             ],
             settings: .settings(
                 base: [
-                    "DEVELOPMENT_TEAM": "너의_TEAM_ID",
-                    "CODE_SIGN_STYLE": "Automatic"
+                    "DEVELOPMENT_TEAM": devTeam,
+                    "CODE_SIGN_STYLE": "Automatic",
+                    "MARKETING_VERSION": "1.0",
+                    "CURRENT_PROJECT_VERSION": "1",
+                    "INFOPLIST_KEY_CFBundleDisplayName": "날씨창고",
+                    "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.weather",
                 ]
             )
         ),
+
+        // MARK: - App Tests
 
         .target(
             name: "NalssiChanggoTests",
@@ -53,6 +81,38 @@ let project = Project(
             dependencies: [
                 .target(name: "NalssiChanggo")
             ]
+        ),
+
+        // MARK: - Widget
+
+        .target(
+            name: "NalssiChanggoWidget",
+            destinations: .iOS,
+            product: .appExtension,
+            bundleId: "com.andev.nalssichanggo.widget",
+            deploymentTargets: .iOS("17.0"),
+            infoPlist: .extendingDefault(with: [
+                "NSExtension": [
+                    "NSExtensionPointIdentifier": "com.apple.widgetkit-extension",
+                ],
+            ]),
+            sources: [
+                "Projects/Widget/Sources/**"
+            ],
+            entitlements: .dictionary([
+                "com.apple.developer.weatherkit": .boolean(true),
+                "com.apple.security.application-groups": .array([.string(appGroupId)]),
+            ]),
+            dependencies: [
+                .target(name: "WeatherDomain"),
+                .target(name: "DesignSystem"),
+            ],
+            settings: .settings(
+                base: [
+                    "DEVELOPMENT_TEAM": devTeam,
+                    "CODE_SIGN_STYLE": "Automatic",
+                ]
+            )
         ),
 
         // MARK: - Core

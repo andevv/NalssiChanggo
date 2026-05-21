@@ -150,9 +150,46 @@ enum Secrets {
 
 ---
 
+## Capability 구성
+
+Entitlements는 `Project.swift`의 `.entitlements(.dictionary([...]))` 블록에서 인라인으로 관리한다. 별도 `.entitlements` 파일을 생성하지 않는다.
+
+| Capability | 적용 타겟 | 키 |
+|------------|----------|----|
+| WeatherKit | App, Widget | `com.apple.developer.weatherkit` |
+| Push Notification | App | `aps-environment` (`development` / `production`) |
+| App Groups | App, Widget | `com.apple.security.application-groups` → `group.com.andev.nalssichanggo` |
+| Location (WhenInUse) | App (Info.plist) | `NSLocationWhenInUseUsageDescription` |
+| Location (Always) | App (Info.plist) | `NSLocationAlwaysAndWhenInUseUsageDescription` |
+| Background Modes | App (Info.plist) | `UIBackgroundModes`: `remote-notification`, `fetch` |
+
+### Xcode 수동 설정 필요 항목
+
+Tuist는 entitlement 키를 생성하지만, Apple Developer 포털에서 App ID에 다음 capability를 직접 활성화해야 한다.
+- WeatherKit
+- Push Notifications
+- App Groups (`group.com.andev.nalssichanggo`)
+
+### Push Notification 배포 전환
+
+```swift
+// Project.swift — App 타겟 entitlements
+"aps-environment": .string("production"),  // 배포 시 변경
+```
+
+---
+
+## Widget
+
+- 타겟명: `NalssiChanggoWidget` (`com.andev.nalssichanggo.widget`)
+- 소스: `Projects/Widget/Sources/`
+- App과 데이터 공유는 App Groups(`group.com.andev.nalssichanggo`)를 통해 `UserDefaults(suiteName:)` 또는 파일로 처리한다.
+- Widget 타겟은 `WeatherDomain`, `DesignSystem`에만 의존한다. 네트워크 호출은 App 타겟이 담당한다.
+
+---
+
 ## 주의사항
 
-- `Project.swift`에서 `DEVELOPMENT_TEAM`을 본인 Team ID로 교체해야 빌드된다.
+- `Project.swift`의 `devTeam` 상수를 본인 Team ID로 교체해야 빌드된다.
 - 기상청 API는 1일 트래픽 제한이 있으므로 개발 중에는 Mock 데이터를 우선 활용한다.
-- WeatherKit은 App ID에 WeatherKit capability가 활성화되어 있어야 한다.
 - `Derived/` 폴더는 Tuist가 자동 생성하므로 직접 수정하지 않는다.
