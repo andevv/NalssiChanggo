@@ -9,7 +9,11 @@ public final class FetchWeatherUseCase: FetchWeatherUseCaseProtocol {
         self.repository = repository
     }
 
-    public func execute(latitude: Double, longitude: Double) -> AnyPublisher<WeatherSummary, Error> {
-        repository.fetchWeather(latitude: latitude, longitude: longitude)
+    public func execute(
+        latitude: Double,
+        longitude: Double,
+        locationName: String
+    ) -> AnyPublisher<WeatherSummary, Error> {
+        repository.fetchWeather(latitude: latitude, longitude: longitude, locationName: locationName)
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import DesignSystem
 import WeatherDomain
 
@@ -20,18 +21,30 @@ struct WeatherDisplayData {
     let hourlyRain: [(hour: String, pct: Int)]
     let rainPeakLabel: String
 
-    // MARK: Air (WeatherKit 미지원 → hasAirData = false)
+    // MARK: Air Quality
     let hasAirData: Bool
-    let pmGrade: String
-    let pmGradeIndex: Int
-    let pmValue: Int
-    let pmDelta: Int
+    let airGrade: String
+    let airGradeIndex: Int    // 0=좋음 1=보통 2=나쁨 3=매우나쁨 4=위험 (AirDial 입력)
+    let airPM25: Int          // PM2.5 μg/m³
+    let airPM10: Int          // PM10 μg/m³
 
     // MARK: Outfit
     let outfitIcon: OutfitIcon
     let outfitLabel: String
     let outfitSub: String
     let outfitChips: [(label: String, highlight: Bool)]
+
+    // MARK: Computed
+
+    var airGradeColor: Color {
+        switch airGradeIndex {
+        case 0:  return .airGood
+        case 1:  return Color(hex: 0xC9A52E)
+        case 2:  return Color(hex: 0xCF6F2A)
+        case 3:  return Color(hex: 0xA93A26)
+        default: return Color(hex: 0x742323)
+        }
+    }
 }
 
 // MARK: - Mapping from WeatherSummary
@@ -85,6 +98,9 @@ extension WeatherDisplayData {
             maxRainChance: maxRainChance
         )
 
+        // Air Quality
+        let air = summary.airQuality
+
         return WeatherDisplayData(
             receiptNo: receiptNo,
             location: locationName.isEmpty ? "위치 확인 중…" : locationName,
@@ -96,11 +112,11 @@ extension WeatherDisplayData {
             rainCondition: rainCondition,
             hourlyRain: Array(hourlyRain),
             rainPeakLabel: rainPeakLabel,
-            hasAirData: false,
-            pmGrade: "--",
-            pmGradeIndex: 0,
-            pmValue: 0,
-            pmDelta: 0,
+            hasAirData: air != nil,
+            airGrade: air?.grade ?? "--",
+            airGradeIndex: air?.gradeIndex ?? 0,
+            airPM25: air?.pm25Value ?? 0,
+            airPM10: air?.pm10Value ?? 0,
             outfitIcon: outfit.icon,
             outfitLabel: outfit.label,
             outfitSub: outfit.sub,
@@ -150,11 +166,11 @@ extension WeatherDisplayData {
                 ("16", 60), ("17", 55), ("18", 35), ("19", 20)
             ],
             rainPeakLabel: "16시 60%",
-            hasAirData: false,
-            pmGrade: "--",
-            pmGradeIndex: 0,
-            pmValue: 0,
-            pmDelta: 0,
+            hasAirData: true,
+            airGrade: "좋음",
+            airGradeIndex: 0,
+            airPM25: 8,
+            airPM10: 22,
             outfitIcon: .lightOuter,
             outfitLabel: "긴팔 + 얇은 가디건",
             outfitSub: "14° → 22° · ☂ 우산 챙기기",

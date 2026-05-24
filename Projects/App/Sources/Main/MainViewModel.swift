@@ -17,7 +17,7 @@ final class MainViewModel {
     let locationManager: LocationManager
 
     private let useCase: FetchWeatherUseCaseProtocol
-    private var cancellables = Set<AnyCancellable>()
+    private var weatherTask: AnyCancellable?
 
     init(useCase: FetchWeatherUseCaseProtocol, locationManager: LocationManager) {
         self.useCase = useCase
@@ -31,7 +31,7 @@ final class MainViewModel {
         isLoading = true
         errorMessage = nil
 
-        useCase.execute(latitude: coord.latitude, longitude: coord.longitude)
+        weatherTask = useCase.execute(latitude: coord.latitude, longitude: coord.longitude, locationName: locationManager.locationName)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -49,7 +49,6 @@ final class MainViewModel {
                     )
                 }
             )
-            .store(in: &cancellables)
     }
 
     func retry() {
@@ -79,7 +78,7 @@ extension MainViewModel {
 
 // Preview 전용 No-op 구현
 private struct NoOpWeatherUseCase: FetchWeatherUseCaseProtocol {
-    func execute(latitude: Double, longitude: Double) -> AnyPublisher<WeatherSummary, Error> {
+    func execute(latitude: Double, longitude: Double, locationName: String) -> AnyPublisher<WeatherSummary, Error> {
         Empty().eraseToAnyPublisher()
     }
 }

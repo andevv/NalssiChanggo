@@ -19,7 +19,8 @@ final class AppleWeatherDataSource {
                     let summary = WeatherSummary(
                         current: Self.mapCurrent(current),
                         hourlyForecasts: hourly.forecast.prefix(24).map(Self.mapHourly),
-                        dailyForecasts: daily.forecast.prefix(7).map(Self.mapDaily)
+                        dailyForecasts: daily.forecast.prefix(7).map(Self.mapDaily),
+                        airQuality: nil  // iOS WeatherKit 미지원 — 기상청 API 연동 시 채워질 예정
                     )
                     promise(.success(summary))
                 } catch {
@@ -36,7 +37,7 @@ final class AppleWeatherDataSource {
         WeatherDomain.CurrentWeather(
             temperature: wk.temperature.converted(to: .celsius).value,
             feelsLike: wk.apparentTemperature.converted(to: .celsius).value,
-            state: mapCondition(wk.condition, isDaytime: wk.isDaylight),
+            state: mapCondition(wk.condition),
             isDaytime: wk.isDaylight,
             humidity: wk.humidity,
             windSpeed: wk.wind.speed.converted(to: .kilometersPerHour).value,
@@ -49,7 +50,7 @@ final class AppleWeatherDataSource {
             date: wk.date,
             temperature: wk.temperature.converted(to: .celsius).value,
             precipitationChance: wk.precipitationChance,
-            state: mapCondition(wk.condition, isDaytime: true)
+            state: mapCondition(wk.condition)
         )
     }
 
@@ -59,34 +60,31 @@ final class AppleWeatherDataSource {
             lowTemperature: wk.lowTemperature.converted(to: .celsius).value,
             highTemperature: wk.highTemperature.converted(to: .celsius).value,
             precipitationChance: wk.precipitationChance,
-            state: mapCondition(wk.condition, isDaytime: true)
+            state: mapCondition(wk.condition)
         )
     }
 
-    private static func mapCondition(
-        _ condition: WeatherKit.WeatherCondition,
-        isDaytime: Bool
-    ) -> WeatherDomain.WeatherState {
+    private static func mapCondition(_ condition: WeatherKit.WeatherCondition) -> WeatherDomain.WeatherState {
         switch condition {
-        case .clear, .mostlyClear:                          return .clear
-        case .partlyCloudy, .sunFlurries, .sunShowers:      return .partlyCloudy
-        case .mostlyCloudy:                                 return .mostlyCloudy
-        case .cloudy:                                       return .cloudy
-        case .drizzle, .freezingDrizzle:                    return .drizzle
-        case .rain, .scatteredThunderstorms:                return .rain
-        case .heavyRain:                                    return .heavyRain
-        case .isolatedThunderstorms, .thunderstorms, .strongStorms: return .thunderstorm
-        case .snow, .flurries, .blowingSnow:                return .snow
-        case .heavySnow:                                    return .heavySnow
-        case .sleet, .freezingRain, .hail:                  return .sleet
-        case .foggy:                                        return .fog
-        case .haze, .smoky, .blowingDust:                   return .haze
-        case .breezy, .windy:                               return .windy
-        case .hot:                                          return .hot
-        case .frigid:                                       return .frigid
-        case .blizzard:                                     return .blizzard
-        case .hurricane, .tropicalStorm:                    return .thunderstorm
-        default:                                            return .unknown
+        case .clear, .mostlyClear:                                      return .clear
+        case .partlyCloudy, .sunFlurries, .sunShowers:                  return .partlyCloudy
+        case .mostlyCloudy:                                             return .mostlyCloudy
+        case .cloudy:                                                   return .cloudy
+        case .drizzle, .freezingDrizzle:                                return .drizzle
+        case .rain, .scatteredThunderstorms:                            return .rain
+        case .heavyRain:                                                return .heavyRain
+        case .isolatedThunderstorms, .thunderstorms, .strongStorms:     return .thunderstorm
+        case .snow, .flurries, .blowingSnow:                            return .snow
+        case .heavySnow:                                                return .heavySnow
+        case .sleet, .freezingRain, .hail:                              return .sleet
+        case .foggy:                                                    return .fog
+        case .haze, .smoky, .blowingDust:                               return .haze
+        case .breezy, .windy:                                           return .windy
+        case .hot:                                                      return .hot
+        case .frigid:                                                    return .frigid
+        case .blizzard:                                                 return .blizzard
+        case .hurricane, .tropicalStorm:                                return .thunderstorm
+        default:                                                        return .unknown
         }
     }
 }

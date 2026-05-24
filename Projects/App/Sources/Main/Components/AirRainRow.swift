@@ -16,7 +16,7 @@ struct AirRainRow: View {
     }
 }
 
-// MARK: - 미세먼지 Card
+// MARK: - 대기질 Card
 
 private struct AirCard: View {
     let data: WeatherDisplayData
@@ -25,11 +25,11 @@ private struct AirCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
-                    CardEyebrow("미세먼지")
+                    CardEyebrow("대기질")
                     if data.hasAirData {
-                        Text(data.pmGrade)
+                        Text(data.airGrade)
                             .font(NCFont.cardValue)
-                            .foregroundStyle(Color.airGood)
+                            .foregroundStyle(data.airGradeColor)
                             .lineLimit(1)
                     } else {
                         Text("--")
@@ -40,7 +40,7 @@ private struct AirCard: View {
                 }
                 Spacer()
                 if data.hasAirData {
-                    AirDial(grade: data.pmGradeIndex, size: 32)
+                    AirDial(grade: data.airGradeIndex, size: 32)
                 } else {
                     Image(systemName: "minus.circle")
                         .font(.system(size: 24))
@@ -53,23 +53,13 @@ private struct AirCard: View {
                 .padding(.bottom, NCSpacing.small)
 
             if data.hasAirData {
-                Text("\(data.pmValue) ㎍/㎥")
-                    .font(NCFont.monoEmphasis)
-                    .foregroundStyle(Color.ink2)
-
-                Text("전일 대비 \(data.pmDelta > 0 ? "+" : "")\(data.pmDelta)")
-                    .font(NCFont.labelSmall)
-                    .foregroundStyle(Color.ink3)
-                    .padding(.top, 2)
+                PMRow(label: "PM2.5", value: data.airPM25)
+                PMRow(label: "PM10", value: data.airPM10)
+                    .padding(.top, 4)
             } else {
-                Text("기상청 API")
-                    .font(NCFont.monoEmphasis)
-                    .foregroundStyle(Color.inkFaint)
-
-                Text("데이터 준비 중")
-                    .font(NCFont.labelSmall)
-                    .foregroundStyle(Color.inkFaint)
-                    .padding(.top, 2)
+                PMRow(label: "PM2.5", value: nil)
+                PMRow(label: "PM10", value: nil)
+                    .padding(.top, 4)
             }
         }
         .padding(NCSpacing.cardInner)
@@ -148,6 +138,34 @@ private struct HourlyRainBars: View {
                     )
                     .frame(maxWidth: .infinity)
                     .scaleEffect(y: CGFloat(max(p, 6)) / 100.0, anchor: .bottom)
+            }
+        }
+    }
+}
+
+// MARK: - PM Row
+
+private struct PMRow: View {
+    let label: String
+    let value: Int?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            Text(label)
+                .font(NCFont.monoEyebrow)
+                .foregroundStyle(Color.ink3)
+                .frame(width: 44, alignment: .leading)
+            if let value {
+                Text("\(value)")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.ink2)
+                Text(" μg/m³")
+                    .font(NCFont.labelSmall)
+                    .foregroundStyle(Color.ink3)
+            } else {
+                Text("--")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.inkFaint)
             }
         }
     }
