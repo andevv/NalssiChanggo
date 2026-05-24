@@ -2,6 +2,7 @@ import WeatherKit
 import CoreLocation
 import Combine
 import WeatherDomain
+import Core
 
 final class AppleWeatherDataSource {
 
@@ -16,9 +17,19 @@ final class AppleWeatherDataSource {
                         for: location,
                         including: .current, .hourly, .daily
                     )
+                    // 현재 시 정각 이후 슬롯만 추출해 24개 보관
+                    let startOfHour = Calendar.current.dateInterval(of: .hour, for: Date())?.start ?? Date()
+                    let hourlySlice = hourly.forecast
+                        .filter { $0.date >= startOfHour }
+                        .prefix(24)
+                        .map(Self.mapHourly)
+                    NCLogger.debug(
+                        "WeatherKit hourly (현재 시 이후): \(hourlySlice.count)개 | \(hourlySlice.first?.date.description ?? "-") ~",
+                        category: .weather
+                    )
                     let summary = WeatherSummary(
                         current: Self.mapCurrent(current),
-                        hourlyForecasts: hourly.forecast.prefix(24).map(Self.mapHourly),
+                        hourlyForecasts: Array(hourlySlice),
                         dailyForecasts: daily.forecast.prefix(7).map(Self.mapDaily),
                         airQuality: nil  // iOS WeatherKit 미지원 — 기상청 API 연동 시 채워질 예정
                     )

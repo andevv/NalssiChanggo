@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import DesignSystem
 import WeatherDomain
+import Core
 
 struct WeatherDisplayData {
 
@@ -58,18 +59,19 @@ extension WeatherDisplayData {
         // Header
         let receiptFormatter = DateFormatter()
         receiptFormatter.dateFormat = "yyyyMMdd·HHmm"
-        let receiptNo = "NO. \(receiptFormatter.string(from: current.date))"
+        let receiptNo = "NO. \(receiptFormatter.string(from: now))"
 
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "ko_KR")
         dateFormatter.dateFormat = "M/d E"
-        let dateLabel = dateFormatter.string(from: current.date)
+        let dateLabel = dateFormatter.string(from: now)
 
         // 다음 8시간 시간당 강수 확률
         let hourFormatter = DateFormatter()
         hourFormatter.dateFormat = "H"
+        let startOfHour = Calendar.current.dateInterval(of: .hour, for: now)?.start ?? now
         let upcomingHours = summary.hourlyForecasts
-            .filter { $0.date >= now }
+            .filter { $0.date >= startOfHour }
             .prefix(8)
 
         let hourlyRain = upcomingHours.map { f in
@@ -172,11 +174,10 @@ extension WeatherDisplayData {
             airPM25: 8,
             airPM10: 22,
             outfitIcon: .lightOuter,
-            outfitLabel: "긴팔 + 얇은 가디건",
+            outfitLabel: "가디건",
             outfitSub: "14° → 22° · ☂ 우산 챙기기",
             outfitChips: [
-                ("긴팔", false), ("가디건", false), ("면바지", false),
-                ("운동화", false), ("☂ 우산", true)
+                ("긴팔", false), ("가디건", false), ("☂ 우산", true)
             ]
         )
     }

@@ -6,15 +6,12 @@ struct OutfitCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            NCEyebrow(title: "OUTFIT · 옷차림", right: "자세히 ›")
+            NCEyebrow(title: "추천 옷차림")
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center, spacing: NCSpacing.cardInner) {
                     OutfitIconBox(icon: data.outfitIcon)
                     OutfitTextBlock(data: data)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.ink4)
                 }
 
                 DashedDivider()
