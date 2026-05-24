@@ -21,7 +21,7 @@ struct MainView: View {
                 WeatherContentView(data: data)
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
-                    Task { await viewModel.retry() }
+                    viewModel.retry()
                 }
             } else {
                 WeatherLoadingView()
@@ -31,8 +31,8 @@ struct MainView: View {
             viewModel.locationManager.requestLocation()
         }
         // 위치가 갱신될 때마다 날씨를 새로 불러온다
-        .task(id: viewModel.locationManager.locationVersion) {
-            await viewModel.loadWeather()
+        .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
+            viewModel.loadWeather()
         }
     }
 }

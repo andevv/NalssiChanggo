@@ -1,3 +1,5 @@
-public protocol WeatherRepositoryProtocol: Sendable {
-    func fetchWeather(latitude: Double, longitude: Double) async throws -> WeatherSummary
+import Combine
+
+public protocol WeatherRepositoryProtocol {
+    func fetchWeather(latitude: Double, longitude: Double) -> AnyPublisher<WeatherSummary, Error>
 }

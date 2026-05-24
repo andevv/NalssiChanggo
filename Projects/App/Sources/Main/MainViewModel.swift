@@ -1,4 +1,6 @@
+import Foundation
 import Observation
+import Combine
 import WeatherDomain
 import WeatherData
 import Location
@@ -15,6 +17,7 @@ final class MainViewModel {
     let locationManager: LocationManager
 
     private let useCase: FetchWeatherUseCaseProtocol
+    private var cancellables = Set<AnyCancellable>()
 
     init(useCase: FetchWeatherUseCaseProtocol, locationManager: LocationManager) {
         self.useCase = useCase
@@ -23,30 +26,35 @@ final class MainViewModel {
 
     // MARK: Actions
 
-    @MainActor
-    func loadWeather() async {
+    func loadWeather() {
         guard let coord = locationManager.coordinate else { return }
         isLoading = true
         errorMessage = nil
-        do {
-            let summary = try await useCase.execute(
-                latitude: coord.latitude,
-                longitude: coord.longitude
+
+        useCase.execute(latitude: coord.latitude, longitude: coord.longitude)
+            .receive(on: DispatchQueue.main)
+            .sink(
+                receiveCompletion: { [weak self] completion in
+                    guard let self else { return }
+                    isLoading = false
+                    if case .failure = completion {
+                        errorMessage = "날씨 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요."
+                    }
+                },
+                receiveValue: { [weak self] summary in
+                    guard let self else { return }
+                    displayData = WeatherDisplayData.from(
+                        summary: summary,
+                        locationName: locationManager.locationName
+                    )
+                }
             )
-            displayData = WeatherDisplayData.from(
-                summary: summary,
-                locationName: locationManager.locationName
-            )
-        } catch {
-            errorMessage = "날씨 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요."
-        }
-        isLoading = false
+            .store(in: &cancellables)
     }
 
-    @MainActor
-    func retry() async {
+    func retry() {
         locationManager.requestLocation()
-        await loadWeather()
+        loadWeather()
     }
 }
 
@@ -71,7 +79,7 @@ extension MainViewModel {
 
 // Preview 전용 No-op 구현
 private struct NoOpWeatherUseCase: FetchWeatherUseCaseProtocol {
-    func execute(latitude: Double, longitude: Double) async throws -> WeatherSummary {
-        throw CancellationError()
+    func execute(latitude: Double, longitude: Double) -> AnyPublisher<WeatherSummary, Error> {
+        Empty().eraseToAnyPublisher()
     }
 }

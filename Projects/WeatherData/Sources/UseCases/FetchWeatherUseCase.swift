@@ -1,3 +1,4 @@
+import Combine
 import WeatherDomain
 
 public final class FetchWeatherUseCase: FetchWeatherUseCaseProtocol {
@@ -8,7 +9,7 @@ public final class FetchWeatherUseCase: FetchWeatherUseCaseProtocol {
         self.repository = repository
     }
 
-    public func execute(latitude: Double, longitude: Double) async throws -> WeatherSummary {
-        try await repository.fetchWeather(latitude: latitude, longitude: longitude)
+    public func execute(latitude: Double, longitude: Double) -> AnyPublisher<WeatherSummary, Error> {
+        repository.fetchWeather(latitude: latitude, longitude: longitude)
     }
 }
