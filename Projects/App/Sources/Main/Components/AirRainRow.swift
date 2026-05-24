@@ -2,7 +2,7 @@ import SwiftUI
 import DesignSystem
 
 struct AirRainRow: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,34 +19,58 @@ struct AirRainRow: View {
 // MARK: - 미세먼지 Card
 
 private struct AirCard: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     CardEyebrow("미세먼지")
-                    Text(data.pmGrade)
-                        .font(NCFont.cardValue)
-                        .foregroundStyle(Color.airGood)
-                        .lineLimit(1)
+                    if data.hasAirData {
+                        Text(data.pmGrade)
+                            .font(NCFont.cardValue)
+                            .foregroundStyle(Color.airGood)
+                            .lineLimit(1)
+                    } else {
+                        Text("--")
+                            .font(NCFont.cardValue)
+                            .foregroundStyle(Color.inkFaint)
+                            .lineLimit(1)
+                    }
                 }
                 Spacer()
-                AirDial(grade: data.pmGradeIndex, size: 32)
+                if data.hasAirData {
+                    AirDial(grade: data.pmGradeIndex, size: 32)
+                } else {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Color.inkFaint)
+                }
             }
 
             DashedDivider()
                 .padding(.top, 12)
                 .padding(.bottom, NCSpacing.small)
 
-            Text("\(data.pmValue) ㎍/㎥")
-                .font(NCFont.monoEmphasis)
-                .foregroundStyle(Color.ink2)
+            if data.hasAirData {
+                Text("\(data.pmValue) ㎍/㎥")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.ink2)
 
-            Text("전일 대비 \(data.pmDelta > 0 ? "+" : "")\(data.pmDelta)")
-                .font(NCFont.labelSmall)
-                .foregroundStyle(Color.ink3)
-                .padding(.top, 2)
+                Text("전일 대비 \(data.pmDelta > 0 ? "+" : "")\(data.pmDelta)")
+                    .font(NCFont.labelSmall)
+                    .foregroundStyle(Color.ink3)
+                    .padding(.top, 2)
+            } else {
+                Text("기상청 API")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.inkFaint)
+
+                Text("데이터 준비 중")
+                    .font(NCFont.labelSmall)
+                    .foregroundStyle(Color.inkFaint)
+                    .padding(.top, 2)
+            }
         }
         .padding(NCSpacing.cardInner)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -57,7 +81,7 @@ private struct AirCard: View {
 // MARK: - 강수 Card
 
 private struct RainCard: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -66,33 +90,40 @@ private struct RainCard: View {
                     CardEyebrow("강수")
                     Text(data.rainCondition)
                         .font(NCFont.cardValue)
-                        .foregroundStyle(Color.rain)
+                        .foregroundStyle(data.rainCondition == "강수 없음" ? Color.ink3 : Color.rain)
                         .lineLimit(1)
                 }
                 Spacer()
                 OutfitIconView(.umbrella, size: 28)
-                    .foregroundStyle(Color.rain)
+                    .foregroundStyle(data.rainCondition == "강수 없음" ? Color.inkFaint : Color.rain)
             }
 
             DashedDivider()
                 .padding(.top, 12)
                 .padding(.bottom, NCSpacing.base)
 
-            HourlyRainBars(values: data.hourlyRain.map(\.pct))
-                .frame(height: 32)
+            if data.hourlyRain.isEmpty {
+                Spacer()
+                Text("데이터 없음")
+                    .font(NCFont.monoEyebrow)
+                    .foregroundStyle(Color.inkFaint)
+            } else {
+                HourlyRainBars(values: data.hourlyRain.map(\.pct))
+                    .frame(height: 32)
 
-            HStack {
-                Text(data.hourlyRain.first.map { "\($0.hour)시" } ?? "")
-                Spacer()
-                Text(data.rainPeakLabel)
-                    .foregroundStyle(Color.rain)
-                    .fontWeight(.semibold)
-                Spacer()
-                Text(data.hourlyRain.last.map { "\($0.hour)시" } ?? "")
+                HStack {
+                    Text(data.hourlyRain.first.map { "\($0.hour)시" } ?? "")
+                    Spacer()
+                    Text(data.rainPeakLabel)
+                        .foregroundStyle(data.rainCondition == "강수 없음" ? Color.ink3 : Color.rain)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Text(data.hourlyRain.last.map { "\($0.hour)시" } ?? "")
+                }
+                .font(NCFont.monoEyebrow)
+                .foregroundStyle(Color.ink3)
+                .padding(.top, 4)
             }
-            .font(NCFont.monoEyebrow)
-            .foregroundStyle(Color.ink3)
-            .padding(.top, 4)
         }
         .padding(NCSpacing.cardInner)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -122,7 +153,7 @@ private struct HourlyRainBars: View {
     }
 }
 
-// MARK: - 카드 내부 아이브로우
+// MARK: - Card Eyebrow
 
 private struct CardEyebrow: View {
     let text: String
@@ -138,7 +169,7 @@ private struct CardEyebrow: View {
 }
 
 #Preview {
-    AirRainRow(data: MockWeather())
+    AirRainRow(data: .preview)
         .padding()
         .background(Color.appBg)
 }

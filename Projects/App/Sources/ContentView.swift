@@ -1,9 +1,9 @@
 import SwiftUI
 
-public struct ContentView: View {
-    public init() {}
+struct ContentView: View {
+    let viewModel: MainViewModel
 
-    public var body: some View {
-        MainView()
+    var body: some View {
+        MainView(viewModel: viewModel)
     }
 }

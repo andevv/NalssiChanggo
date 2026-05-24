@@ -156,7 +156,8 @@ let project = Project(
                 "Projects/Location/Sources/**"
             ],
             dependencies: [
-                .target(name: "Core")
+                .target(name: "Core"),
+                .sdk(name: "CoreLocation", type: .framework, status: .required),
             ]
         ),
 
@@ -204,7 +205,9 @@ let project = Project(
                 .target(name: "Core"),
                 .target(name: "Location"),
                 .target(name: "WeatherDomain"),
-                .target(name: "WeatherEnsemble")
+                .target(name: "WeatherEnsemble"),
+                .sdk(name: "WeatherKit", type: .framework, status: .required),
+                .sdk(name: "CoreLocation", type: .framework, status: .required),
             ]
         )
     ]

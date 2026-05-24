@@ -2,16 +2,16 @@ import SwiftUI
 import DesignSystem
 
 struct WeatherHeroCard: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            NCEyebrow(title: "TOTAL · 앙상블 합계")
+            NCEyebrow(title: "TOTAL · Apple WeatherKit")
 
             VStack(alignment: .leading, spacing: 0) {
                 // 아이콘 + 기온
                 HStack(alignment: .bottom, spacing: NCSpacing.cardInner) {
-                    WeatherIconView(.cloudSun, size: 84)
+                    WeatherIconView(data.weatherIcon, size: 84)
                         .foregroundStyle(Color.goldDeep)
 
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
@@ -36,49 +36,40 @@ struct WeatherHeroCard: View {
                     .foregroundStyle(Color.ink2)
                     .padding(.top, 4)
 
-                // 구분선 + AGREE 바
+                // 구분선 + 소스 정보
                 VStack(alignment: .leading, spacing: 0) {
                     DashedDivider()
                         .padding(.bottom, 12)
 
-                    HStack(spacing: NCSpacing.base) {
-                        Text("AGREE")
+                    HStack(alignment: .center, spacing: NCSpacing.base) {
+                        Text("SOURCE")
                             .font(NCFont.monoEyebrow)
                             .foregroundStyle(Color.ink3)
                             .tracking(1)
                             .textCase(.uppercase)
 
-                        AgreementBar(
-                            value: Double(data.agreementPct) / 100.0,
-                            color: Color.gold
-                        )
-
-                        Text("\(data.agreementPct)%")
+                        Text("Apple WeatherKit")
                             .font(NCFont.monoEmphasis)
                             .foregroundStyle(Color.goldDeep)
+
+                        Spacer()
                     }
 
-                    HStack(alignment: .lastTextBaseline) {
-                        Text("Google · Apple · 기상청 — 세 곳 일치")
-                            .font(NCFont.labelSmall)
-                            .foregroundStyle(Color.ink3)
-                        Spacer()
-                        Text("소스 비교 ›")
-                            .font(NCFont.monoBody)
-                            .foregroundStyle(Color.goldDeep)
-                    }
-                    .padding(.top, 6)
+                    Text("실시간 데이터 · 앙상블 집계 전")
+                        .font(NCFont.labelSmall)
+                        .foregroundStyle(Color.ink3)
+                        .padding(.top, 6)
                 }
                 .padding(.top, NCSpacing.cardInner)
             }
-            .padding(NCSpacing.cardInner + 4)  // 20pt — 디자인 기준
+            .padding(NCSpacing.cardInner + 4)
             .ncCardGold()
         }
     }
 }
 
 #Preview {
-    WeatherHeroCard(data: MockWeather())
+    WeatherHeroCard(data: .preview)
         .padding()
         .background(Color.appBg)
 }

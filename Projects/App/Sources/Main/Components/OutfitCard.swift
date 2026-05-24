@@ -2,7 +2,7 @@ import SwiftUI
 import DesignSystem
 
 struct OutfitCard: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -10,7 +10,7 @@ struct OutfitCard: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center, spacing: NCSpacing.cardInner) {
-                    OutfitIconBox()
+                    OutfitIconBox(icon: data.outfitIcon)
                     OutfitTextBlock(data: data)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .medium))
@@ -32,6 +32,8 @@ struct OutfitCard: View {
 // MARK: - Subviews
 
 private struct OutfitIconBox: View {
+    let icon: OutfitIcon
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: NCRadius.inner, style: .continuous)
@@ -40,7 +42,7 @@ private struct OutfitIconBox: View {
                     RoundedRectangle(cornerRadius: NCRadius.inner, style: .continuous)
                         .strokeBorder(Color.hairline, lineWidth: 1)
                 )
-            OutfitIconView(.lightOuter, size: 32)
+            OutfitIconView(icon, size: 32)
                 .foregroundStyle(Color.ink2)
         }
         .frame(width: 56, height: 56)
@@ -48,7 +50,7 @@ private struct OutfitIconBox: View {
 }
 
 private struct OutfitTextBlock: View {
-    let data: MockWeather
+    let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -58,9 +60,11 @@ private struct OutfitTextBlock: View {
                 .tracking(-0.3)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
-            Text(data.outfitSub)
-                .font(NCFont.monoEyebrow)
-                .foregroundStyle(Color.ink3)
+            if !data.outfitSub.isEmpty {
+                Text(data.outfitSub)
+                    .font(NCFont.monoEyebrow)
+                    .foregroundStyle(Color.ink3)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -82,9 +86,11 @@ private struct ChipRow: View {
                         NCChip(label: chips[i].label, highlight: chips[i].highlight)
                     }
                 }
-                HStack(spacing: 6) {
-                    ForEach(3..<chips.count, id: \.self) { i in
-                        NCChip(label: chips[i].label, highlight: chips[i].highlight)
+                if chips.count > 3 {
+                    HStack(spacing: 6) {
+                        ForEach(3..<chips.count, id: \.self) { i in
+                            NCChip(label: chips[i].label, highlight: chips[i].highlight)
+                        }
                     }
                 }
             }
@@ -93,7 +99,7 @@ private struct ChipRow: View {
 }
 
 #Preview {
-    OutfitCard(data: MockWeather())
+    OutfitCard(data: .preview)
         .padding()
         .background(Color.appBg)
 }
