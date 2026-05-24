@@ -27,10 +27,8 @@ struct MainView: View {
                 WeatherLoadingView()
             }
         }
-        .onAppear {
-            viewModel.locationManager.requestLocation()
-        }
         // 위치가 갱신될 때마다 날씨를 새로 불러온다
+        // 위치 요청 자체는 LocationManager 내부에서 관리 (requestLocation 중복 호출 방지)
         .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
             viewModel.loadWeather()
         }

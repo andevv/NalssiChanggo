@@ -46,9 +46,11 @@ extension LocationManager: CLLocationManagerDelegate {
         didUpdateLocations locations: [CLLocation]
     ) {
         guard let location = locations.last else { return }
+        // isRequestingLocation이 false면 이미 처리한 요청 — 캐시된 위치 등 중복 콜백 무시
+        guard isRequestingLocation else { return }
         isRequestingLocation = false
         coordinate = location.coordinate
-        locationVersion += 1
+        // locationVersion은 reverseGeocode 완료 후 한 번만 증가
         reverseGeocode(location)
     }
 
@@ -63,8 +65,8 @@ extension LocationManager: CLLocationManagerDelegate {
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let newStatus = manager.authorizationStatus
         authorizationStatus = newStatus
-        // 초기 delegate 설정 시 호출되는 경우는 무시 — requestLocation()은 View에서 명시적으로 호출
-        // 권한이 새로 부여된 경우에만 자동 요청 (isRequestingLocation 가드가 중복 방지)
+        // delegate 설정 시 초기 발화 + 권한 변경 시 발화 모두 여기서 처리
+        // View는 requestLocation()을 직접 호출하지 않으므로, 위치 요청의 유일한 자동 진입점
         if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
             requestLocation()
         }
@@ -72,15 +74,19 @@ extension LocationManager: CLLocationManagerDelegate {
 
     private func reverseGeocode(_ location: CLLocation) {
         CLGeocoder().reverseGeocodeLocation(location) { [weak self] placemarks, _ in
-            guard let self, let placemark = placemarks?.first else { return }
+            guard let self else { return }
             DispatchQueue.main.async {
-                let city     = placemark.administrativeArea ?? ""
-                let district = placemark.subLocality ?? placemark.locality ?? ""
-                if !city.isEmpty && !district.isEmpty {
-                    self.locationName = "\(city) · \(district)"
-                } else if !city.isEmpty {
-                    self.locationName = city
+                if let placemark = placemarks?.first {
+                    let city     = placemark.administrativeArea ?? ""
+                    let district = placemark.subLocality ?? placemark.locality ?? ""
+                    if !city.isEmpty && !district.isEmpty {
+                        self.locationName = "\(city) · \(district)"
+                    } else if !city.isEmpty {
+                        self.locationName = city
+                    }
                 }
+                // 지오코딩 성공·실패 무관하게 한 번만 증가 → loadWeather 트리거
+                self.locationVersion += 1
             }
         }
     }
