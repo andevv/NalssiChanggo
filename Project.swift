@@ -18,6 +18,7 @@ let project = Project(
             deploymentTargets: .iOS("17.0"),
             infoPlist: .extendingDefault(
                 with: [
+                    "CFBundleDisplayName": "날씨창고",
                     "UILaunchScreen": [
                         "UIColorName": "",
                         "UIImageName": "",
