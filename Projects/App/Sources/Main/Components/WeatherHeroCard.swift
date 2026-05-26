@@ -6,7 +6,7 @@ struct WeatherHeroCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            NCEyebrow(title: "TOTAL · Apple WeatherKit")
+            NCEyebrow(title: "TOTAL · ENSEMBLE")
 
             VStack(alignment: .leading, spacing: 0) {
                 // 아이콘 + 기온
@@ -48,14 +48,14 @@ struct WeatherHeroCard: View {
                             .tracking(1)
                             .textCase(.uppercase)
 
-                        Text("Apple WeatherKit")
+                        Text("WeatherKit × 기상청")
                             .font(NCFont.monoEmphasis)
                             .foregroundStyle(Color.goldDeep)
 
                         Spacer()
                     }
 
-                    Text("실시간 데이터 · 앙상블 집계 전")
+                    Text("가중 앙상블 · KMA 60 : Apple 40")
                         .font(NCFont.labelSmall)
                         .foregroundStyle(Color.ink3)
                         .padding(.top, 6)
