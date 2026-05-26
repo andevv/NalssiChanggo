@@ -125,32 +125,57 @@ Entitlements는 `Project.swift` `.entitlements(.dictionary([...]))` 블록에서
 ```swift
 enum Secrets {
     static let googleWeatherAPIKey = "YOUR_KEY"
-    static let kmaServiceKey       = "YOUR_KEY"  // 기상청 서비스키
+    static let kmaServiceKey       = "YOUR_KEY"  // 기상청 서비스키 (URL 인코딩된 값 그대로)
+    static let airKoreaAPIKey      = "YOUR_KEY"
 }
 ```
 
 - WeatherKit은 별도 키 없음 (Apple Developer 계정 인증)
-- 기상청 API는 1일 트래픽 제한 → 개발 중 Mock 데이터 우선 활용
+- 기상청·에어코리아 키는 data.go.kr 활용 신청 후 발급
 - CI 환경: 환경변수 또는 시크릿 주입 방식 사용
 
 ---
 
 ## 날씨 API
 
-| 소스 | 방식 | 좌표 |
-|------|------|------|
-| Apple WeatherKit | 네이티브 프레임워크 | 위경도 |
-| Google Weather API | REST | 위경도 |
-| 기상청 단기예보 API | REST | Lambert 격자(nx/ny) — 위경도 변환 유틸 `Core`에 위치 |
+| 소스 | 방식 | 좌표 | 구현 상태 |
+|------|------|------|----------|
+| Apple WeatherKit | 네이티브 프레임워크 | 위경도 | ✅ 완료 |
+| 기상청 단기예보 API | REST | Lambert 격자(nx/ny) | ✅ 완료 |
+| Google Weather API | REST | 위경도 | 미구현 |
+
+### 기상청 API 엔드포인트
+
+베이스 URL: `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0`
+
+| 오퍼레이션 | 용도 | 발표 주기 | 구현 |
+|-----------|------|----------|------|
+| `getUltraSrtNcst` | 초단기실황 (현재 기온·풍속·습도·강수형태) | 매시 :40 | ✅ |
+| `getVilageFcst` | 단기예보 (시간별·일별 24h+) | 3시간마다 | ✅ |
+| `getUltraSrtFcst` | 초단기예보 (SKY 포함) | 매 30분 | 보류 — 운영 전환 후 추가 예정 |
+
+- 일일 호출 한도: `getUltraSrtNcst` + `getVilageFcst` 공유 (VilageFcstInfoService_2.0 서비스 기준)
+- Lambert 격자 변환: `Core/LambertConverter.swift` — `LambertConverter.convert(latitude:longitude:) → GridPoint`
 
 ---
 
 ## 앙상블 전략
 
-`WeatherEnsemble` 모듈에서 집계. 전략은 항목별로 다를 수 있으며 미확정.
+`WeatherEnsemble` 모듈에서 집계. `WeatherEnsembler`가 `WeatherSummary` 두 개를 받아 병합.
 
-- `EnsembleStrategy` 프로토콜로 추상화, 구체 전략은 DI로 교체 가능하게 설계
-- 수치 항목(기온·강수량)과 상태 항목(맑음·흐림)은 전략을 분리
+### 현재 구현 (WeatherKit × KMA)
+
+| 항목 | 전략 | 가중치 |
+|------|------|--------|
+| 기온·습도·풍속 | `WeightedAverageStrategy` (가중 평균) | KMA 0.6 : Apple 0.4 |
+| 강수확률 | `WeightedAverageStrategy` (가중 평균) | KMA 0.6 : Apple 0.4 |
+| 날씨 상태 | `MajorityVoteStrategy` (가중 다수결) | KMA 0.6 : Apple 0.4, `.unknown` 투표 제외 |
+| feelsLike | Apple 전용 | KMA 미제공 |
+| isDaytime | Apple 전용 | KMA 일출/일몰 미제공 |
+
+- 소스 장애 시 정상 소스 단독 사용 (nil-safe)
+- `EnsembleStrategy` 프로토콜로 추상화 → Google API 추가 시 3개 소스 다수결로 교체 가능
+- 수치 항목(`NumericEnsembleStrategy`)과 상태 항목(`StateEnsembleStrategy`) 전략 분리
 
 ---
 
