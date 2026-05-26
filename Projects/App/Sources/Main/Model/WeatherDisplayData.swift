@@ -83,7 +83,7 @@ extension WeatherDisplayData {
         let rainPeakLabel: String
         if let peak = peakHour, peak.precipitationChance >= 0.3 {
             let h = hourFormatter.string(from: peak.date)
-            rainCondition = "\(h)시 전후 비"
+            rainCondition = "\(h)시"
             rainPeakLabel = "\(h)시 \(Int(peak.precipitationChance * 100))%"
         } else {
             rainCondition = "강수 없음"

@@ -20,7 +20,7 @@ enum OutfitRecommender {
 
         let (icon, label, topChips): (OutfitIcon, String, [String]) = {
             switch feelsLike {
-            case 28...:   return (.shortSleeve, "반팔",        ["반팔"])
+            case 28...:   return (.shortSleeve, "반팔",        ["반팔", "반바지"])
             case 23..<28: return (.shortSleeve, "반팔",        ["반팔"])
             case 20..<23: return (.longSleeve,  "긴팔",        ["긴팔"])
             case 15..<20: return (.lightOuter,  "가디건",      ["긴팔", "가디건"])

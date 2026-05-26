@@ -6,7 +6,7 @@ struct OutfitCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            NCEyebrow(title: "추천 옷차림")
+            NCEyebrow(title: "현재 시각 추천 옷차림")
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center, spacing: NCSpacing.cardInner) {
