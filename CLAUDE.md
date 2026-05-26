@@ -50,9 +50,7 @@ tuist clean && tuist generate  # 캐시 문제 발생 시
 
 `Tuist/Package.swift` 관리. 추가 시 `Package.swift` 수정 → `tuist install` → `tuist generate`.
 
-| 패키지 | 용도 | 사용 모듈 |
-|--------|------|----------|
-| Alamofire | HTTP 네트워크 | WeatherData |
+현재 외부 패키지 없음. 네트워크 레이어는 `URLSession` 직접 사용.
 
 ---
 
