@@ -12,7 +12,11 @@ struct NalssiChanggoApp: App {
         FontRegistrar.register()
 
         let locationManager = LocationManager()
-        let repository = WeatherRepositoryImpl(airKoreaAPIKey: Secrets.airKoreaAPIKey, kmaAPIKey: Secrets.kmaServiceKey)
+        let repository = WeatherRepositoryImpl(
+            airKoreaAPIKey: Secrets.airKoreaAPIKey,
+            kmaAPIKey: Secrets.kmaServiceKey,
+            owmAPIKey: Secrets.openWeatherMapAPIKey
+        )
         let useCase = FetchWeatherUseCase(repository: repository)
         viewModel = MainViewModel(useCase: useCase, locationManager: locationManager)
     }

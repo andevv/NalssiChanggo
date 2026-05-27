@@ -9,11 +9,13 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
     private let appleDataSource = AppleWeatherDataSource()
     private let airKoreaDataSource: AirKoreaDataSource
     private let kmaDataSource: KMAWeatherDataSource
+    private let owmDataSource: OpenWeatherMapDataSource
     private let ensembler = WeatherEnsembler()
 
-    public init(airKoreaAPIKey: String, kmaAPIKey: String) {
+    public init(airKoreaAPIKey: String, kmaAPIKey: String, owmAPIKey: String) {
         airKoreaDataSource = AirKoreaDataSource(apiKey: airKoreaAPIKey)
-        kmaDataSource = KMAWeatherDataSource(apiKey: kmaAPIKey)
+        kmaDataSource      = KMAWeatherDataSource(apiKey: kmaAPIKey)
+        owmDataSource      = OpenWeatherMapDataSource(apiKey: owmAPIKey)
     }
 
     public func fetchWeather(
@@ -23,7 +25,6 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
     ) -> AnyPublisher<WeatherSummary, Error> {
         let sidoName = AirKoreaDataSource.sidoName(from: locationName)
 
-        // 소스 실패 시 nil로 처리해 앙상블에서 제외
         let applePublisher: AnyPublisher<WeatherSummary?, Error> = appleDataSource
             .fetchWeather(latitude: latitude, longitude: longitude)
             .map(Optional.init)
@@ -48,6 +49,18 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
 
+        let owmPublisher: AnyPublisher<WeatherSummary?, Error> = owmDataSource
+            .fetchWeather(latitude: latitude, longitude: longitude)
+            .map(Optional.init)
+            .handleEvents(receiveCompletion: {
+                if case .failure(let e) = $0 {
+                    NCLogger.error("OWM 실패: \(e.localizedDescription)", category: .weather)
+                }
+            })
+            .replaceError(with: nil)
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+
         let airPublisher: AnyPublisher<AirQualityData?, Error> = airKoreaDataSource
             .fetchAirQuality(sidoName: sidoName)
             .map(Optional.init)
@@ -56,10 +69,10 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .eraseToAnyPublisher()
 
         return applePublisher
-            .combineLatest(kmaPublisher, airPublisher)
-            .tryMap { [ensembler] apple, kma, airQuality in
-                guard var summary = ensembler.ensemble(apple: apple, kma: kma) else {
-                    NCLogger.error("Apple·KMA 모두 실패 — 날씨 데이터 없음", category: .weather)
+            .combineLatest(kmaPublisher, owmPublisher, airPublisher)
+            .tryMap { [ensembler] apple, kma, owm, airQuality in
+                guard var summary = ensembler.ensemble(apple: apple, kma: kma, owm: owm) else {
+                    NCLogger.error("Apple·KMA·OWM 모두 실패 — 날씨 데이터 없음", category: .weather)
                     throw URLError(.cannotLoadFromNetwork)
                 }
                 NCLogger.info(
@@ -68,7 +81,6 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
                     "시간별: \(summary.hourlyForecasts.count)개 일별: \(summary.dailyForecasts.count)개",
                     category: .weather
                 )
-                // 대기질 주입
                 summary = WeatherSummary(
                     current: summary.current,
                     hourlyForecasts: summary.hourlyForecasts,
