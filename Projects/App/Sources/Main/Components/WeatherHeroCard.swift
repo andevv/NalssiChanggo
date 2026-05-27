@@ -48,14 +48,14 @@ struct WeatherHeroCard: View {
                             .tracking(1)
                             .textCase(.uppercase)
 
-                        Text("WeatherKit × 기상청")
+                        Text("WeatherKit × 기상청 × OWM")
                             .font(NCFont.monoEmphasis)
                             .foregroundStyle(Color.goldDeep)
 
                         Spacer()
                     }
 
-                    Text("가중 앙상블 · KMA 60 : Apple 40")
+                    Text("가중 앙상블 · KMA 40 : Apple 30 : OWM 30")
                         .font(NCFont.labelSmall)
                         .foregroundStyle(Color.ink3)
                         .padding(.top, 6)
