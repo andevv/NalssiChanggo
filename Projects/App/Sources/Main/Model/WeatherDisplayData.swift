@@ -132,7 +132,7 @@ extension WeatherDisplayData {
             return HourlyItem(
                 id: idx,
                 hourLabel: "\(hourFormatter.string(from: forecast.date))시",
-                temperature: Int(forecast.temperature.rounded()),
+                temperature: idx == 0 ? Int(current.temperature.rounded()) : Int(forecast.temperature.rounded()),
                 precipitationPct: Int(forecast.precipitationChance * 100),
                 icon: mapWeatherIcon(state: forecast.state, isDaytime: isDaytime),
                 isNow: idx == 0,
