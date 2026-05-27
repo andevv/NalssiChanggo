@@ -47,6 +47,7 @@ private struct WeatherContentView: View {
                 WeatherHeroCard(data: data)
                 AirRainRow(data: data)
                 OutfitCard(data: data)
+                HourlyTimelineCard(data: data)
             }
             .padding(.horizontal, NCSpacing.screenH)
             .padding(.top, NCSpacing.base)

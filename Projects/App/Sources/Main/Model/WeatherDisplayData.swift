@@ -35,6 +35,21 @@ struct WeatherDisplayData {
     let outfitSub: String
     let outfitChips: [(label: String, highlight: Bool)]
 
+    // MARK: Hourly Timeline
+    let todayLow: Int?
+    let todayHigh: Int?
+    let hourlyTimeline: [HourlyItem]
+
+    struct HourlyItem: Identifiable {
+        let id: Int
+        let hourLabel: String
+        let temperature: Int
+        let precipitationPct: Int
+        let icon: WeatherIcon
+        let isNow: Bool
+        let dayLabel: String?   // 날짜 변경 시점의 첫 항목에만 설정 (e.g. "5/28 목")
+    }
+
     // MARK: Computed
 
     var airGradeColor: Color {
@@ -90,8 +105,42 @@ extension WeatherDisplayData {
             rainPeakLabel = "강수 없음"
         }
 
-        // Outfit
+        // 시간별 예보 (최대 24시간)
+        let dayLabelFormatter = DateFormatter()
+        dayLabelFormatter.locale = Locale(identifier: "ko_KR")
+        dayLabelFormatter.dateFormat = "M/d E"
+
+        let forecastSlots = Array(
+            summary.hourlyForecasts
+                .filter { $0.date >= startOfHour }
+                .prefix(24)
+        )
+        let hourlyTimeline: [HourlyItem] = forecastSlots.enumerated().map { idx, forecast in
+            let hour = Calendar.current.component(.hour, from: forecast.date)
+            let isDaytime = (6...19).contains(hour)
+            let prevDate = idx > 0 ? forecastSlots[idx - 1].date : nil
+            let dayLabel: String? = prevDate.flatMap { prev in
+                Calendar.current.isDate(forecast.date, inSameDayAs: prev)
+                    ? nil
+                    : dayLabelFormatter.string(from: forecast.date)
+            }
+            return HourlyItem(
+                id: idx,
+                hourLabel: "\(hourFormatter.string(from: forecast.date))시",
+                temperature: Int(forecast.temperature.rounded()),
+                precipitationPct: Int(forecast.precipitationChance * 100),
+                icon: mapWeatherIcon(state: forecast.state, isDaytime: isDaytime),
+                isNow: idx == 0,
+                dayLabel: dayLabel
+            )
+        }
+
+        // 오늘 최저·최고 기온
         let today = summary.dailyForecasts.first
+        let todayLow  = today.map { Int($0.lowTemperature.rounded()) }
+        let todayHigh = today.map { Int($0.highTemperature.rounded()) }
+
+        // Outfit
         let maxRainChance = peakHour?.precipitationChance ?? 0
         let outfit = OutfitRecommender.recommend(
             feelsLike: current.feelsLike,
@@ -122,7 +171,10 @@ extension WeatherDisplayData {
             outfitIcon: outfit.icon,
             outfitLabel: outfit.label,
             outfitSub: outfit.sub,
-            outfitChips: outfit.chips
+            outfitChips: outfit.chips,
+            todayLow: todayLow,
+            todayHigh: todayHigh,
+            hourlyTimeline: hourlyTimeline
         )
     }
 
@@ -178,7 +230,25 @@ extension WeatherDisplayData {
             outfitSub: "14° → 22° · ☂ 우산 챙기기",
             outfitChips: [
                 ("긴팔", false), ("가디건", false), ("☂ 우산", true)
-            ]
+            ],
+            todayLow: 14,
+            todayHigh: 22,
+            hourlyTimeline: {
+                let icons: [WeatherIcon] = [
+                    .cloudRain, .cloudRain, .cloud, .cloudSun,
+                    .sun, .sun, .cloudSun, .cloud,
+                    .cloudRain, .cloudRain, .cloud, .cloudSun
+                ]
+                let temps   = [19, 20, 21, 22, 22, 21, 20, 19, 18, 17, 16, 16]
+                let pcts    = [60, 55, 40, 20,  5,  0,  0,  5, 30, 45, 50, 40]
+                let labels  = ["지금", "14시", "15시", "16시", "17시", "18시", "19시", "20시", "21시", "22시", "23시", "0시"]
+                let dayLabels: [String?] = Array(repeating: nil, count: 11) + ["5/28 목"]
+                return (0..<12).map { i in
+                    HourlyItem(id: i, hourLabel: labels[i], temperature: temps[i],
+                               precipitationPct: pcts[i], icon: icons[i],
+                               isNow: i == 0, dayLabel: dayLabels[i])
+                }
+            }()
         )
     }
 }
