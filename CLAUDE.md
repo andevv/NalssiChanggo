@@ -192,6 +192,48 @@ enum Secrets {
 
 ---
 
+## 메인 화면 컴포넌트
+
+`Projects/App/Sources/Main/` 하위 구조:
+
+```
+View/
+  MainView.swift          # ScrollView 루트, WeatherContentView 조합
+Components/
+  WeatherHeroCard.swift   # 현재 기온·날씨 상태·앙상블 소스 표시
+  AirRainRow.swift        # 대기질 카드 + 강수 카드 (가로 2분할)
+  OutfitCard.swift        # 옷차림 추천
+  HourlyTimelineCard.swift # 시간별 예보 (가로 스크롤)
+Model/
+  WeatherDisplayData.swift # WeatherSummary → View용 표시 데이터 매핑
+  OutfitRecommender.swift  # 체감 온도·강수 확률 기반 옷차림 추천
+```
+
+### WeatherDisplayData 주요 로직
+
+**강수 카드 레이블** (`rainCondition`)
+- 기준: `precipitationChance >= 0.4` (40%) 이상이 처음 등장하는 시각
+- 현재 시각 자체가 40% 이상이면 `"지금"`, 이후 시각이면 `"N시부터"`
+- 0–39%만 있으면 `"강수 없음"`
+- `peakHour`는 옷차림 추천의 `maxRainChance`용으로만 유지
+
+**시간별 예보 기온**
+- `isNow`(첫 번째 슬롯)는 `summary.current.temperature`(실시간 관측 앙상블) 사용
+- 이후 슬롯은 `hourlyForecasts[n].temperature`(예보값) 사용
+- 메인 기온 카드와 "지금" 셀 기온이 항상 일치하도록 보장
+
+**시간별 예보 아이콘**
+- `WeatherState` → `mapWeatherIcon(state:isDaytime:)` 매핑
+- `isDaytime`은 해당 시각의 hour가 6–19시 범위인지로 판별 (sunrise/sunset 미사용)
+- 아이콘(WeatherState)과 강수확률(precipitationChance)은 독립 데이터 — 불일치 가능
+
+**강수 확률 색상 임계값 (HourlyTimelineCard)**
+- `pct < 10`: `"—"` 표시 (inkFaint)
+- `10 ≤ pct < 40`: 물방울 + % 연한 rain 색
+- `pct >= 40`: 물방울 + % 진한 rain 색
+
+---
+
 ## 코딩 컨벤션
 
 - 변수·함수명 영어, 주석 한국어 허용
