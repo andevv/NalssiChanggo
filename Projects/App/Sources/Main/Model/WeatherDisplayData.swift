@@ -94,12 +94,17 @@ extension WeatherDisplayData {
         }
 
         let peakHour = upcomingHours.max(by: { $0.precipitationChance < $1.precipitationChance })
+
+        // 강수 시작 시각: 40% 이상이 처음 등장하는 시간 (피크가 아닌 시작 기준)
+        let rainThreshold = 0.4
+        let firstRain = upcomingHours.first { $0.precipitationChance >= rainThreshold }
+        let isNowRaining = (upcomingHours.first?.precipitationChance ?? 0) >= rainThreshold
         let rainCondition: String
         let rainPeakLabel: String
-        if let peak = peakHour, peak.precipitationChance >= 0.3 {
-            let h = hourFormatter.string(from: peak.date)
-            rainCondition = "\(h)시"
-            rainPeakLabel = "\(h)시 \(Int(peak.precipitationChance * 100))%"
+        if let rain = firstRain {
+            let h = hourFormatter.string(from: rain.date)
+            rainCondition = isNowRaining ? "지금" : "\(h)시부터"
+            rainPeakLabel = "\(h)시 \(Int(rain.precipitationChance * 100))%"
         } else {
             rainCondition = "강수 없음"
             rainPeakLabel = "강수 없음"
