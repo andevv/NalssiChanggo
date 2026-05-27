@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-Apple WeatherKit · Google Weather API · 한국 기상청 API 세 소스를 앙상블·집계하여 최종 날씨 값을 제공하는 iOS 날씨 앱.
+Apple WeatherKit · OpenWeatherMap API · 한국 기상청 API 세 소스를 앙상블·집계하여 최종 날씨 값을 제공하는 iOS 날씨 앱.
 
 - **플랫폼**: iOS 17+, iPhone 전용, Portrait 고정, 라이트 모드 고정
 - **UI**: SwiftUI + `@Observable`
@@ -122,14 +122,15 @@ Entitlements는 `Project.swift` `.entitlements(.dictionary([...]))` 블록에서
 
 ```swift
 enum Secrets {
-    static let googleWeatherAPIKey = "YOUR_KEY"
-    static let kmaServiceKey       = "YOUR_KEY"  // 기상청 서비스키 (URL 인코딩된 값 그대로)
-    static let airKoreaAPIKey      = "YOUR_KEY"
+    static let openWeatherMapAPIKey = "YOUR_KEY"   // openweathermap.org 발급
+    static let kmaServiceKey        = "YOUR_KEY"   // 기상청 서비스키 (URL 인코딩된 값 그대로)
+    static let airKoreaAPIKey       = "YOUR_KEY"
 }
 ```
 
 - WeatherKit은 별도 키 없음 (Apple Developer 계정 인증)
 - 기상청·에어코리아 키는 data.go.kr 활용 신청 후 발급
+- OpenWeatherMap 키는 openweathermap.org 회원가입 후 발급 (Free plan)
 - CI 환경: 환경변수 또는 시크릿 주입 방식 사용
 
 ---
@@ -140,7 +141,7 @@ enum Secrets {
 |------|------|------|----------|
 | Apple WeatherKit | 네이티브 프레임워크 | 위경도 | ✅ 완료 |
 | 기상청 단기예보 API | REST | Lambert 격자(nx/ny) | ✅ 완료 |
-| Google Weather API | REST | 위경도 | 미구현 |
+| OpenWeatherMap API | REST | 위경도 | ✅ 완료 |
 
 ### 기상청 API 엔드포인트
 
@@ -155,24 +156,38 @@ enum Secrets {
 - 일일 호출 한도: `getUltraSrtNcst` + `getVilageFcst` 공유 (VilageFcstInfoService_2.0 서비스 기준)
 - Lambert 격자 변환: `Core/LambertConverter.swift` — `LambertConverter.convert(latitude:longitude:) → GridPoint`
 
+### OpenWeatherMap API 엔드포인트
+
+베이스 URL: `https://api.openweathermap.org/data/2.5`
+
+| 엔드포인트 | 용도 | 구현 |
+|-----------|------|------|
+| `GET /weather` | 현재 날씨 (기온·체감·습도·풍속·상태·일출몰) | ✅ |
+| `GET /forecast` | 5일 3시간 예보 → 시간별·일별 집계 (cnt=40) | ✅ |
+
+- Free plan: 분당 60회, 월 100만 회
+- 풍속 단위: m/s (수신) → km/h 변환 후 저장
+- 날씨 상태: condition code (int) → `WeatherState` 매핑 (`OpenWeatherMapDataSource`)
+- 시간별 예보: 3시간 간격 슬롯 (KMA·Apple은 1시간 간격 — 앙상블 시 매칭 없는 슬롯은 Apple 단독 사용)
+
 ---
 
 ## 앙상블 전략
 
-`WeatherEnsemble` 모듈에서 집계. `WeatherEnsembler`가 `WeatherSummary` 두 개를 받아 병합.
+`WeatherEnsemble` 모듈에서 집계. `WeatherEnsembler`가 `WeatherSummary`를 소스별로 받아 병합.
 
-### 현재 구현 (WeatherKit × KMA)
+### 현재 구현 (WeatherKit × KMA × OWM)
 
 | 항목 | 전략 | 가중치 |
 |------|------|--------|
-| 기온·습도·풍속 | `WeightedAverageStrategy` (가중 평균) | KMA 0.6 : Apple 0.4 |
-| 강수확률 | `WeightedAverageStrategy` (가중 평균) | KMA 0.6 : Apple 0.4 |
-| 날씨 상태 | `MajorityVoteStrategy` (가중 다수결) | KMA 0.6 : Apple 0.4, `.unknown` 투표 제외 |
-| feelsLike | Apple 전용 | KMA 미제공 |
-| isDaytime | Apple 전용 | KMA 일출/일몰 미제공 |
+| 기온·습도·풍속 | `WeightedAverageStrategy` (가중 평균) | KMA 0.4 : Apple 0.3 : OWM 0.3 |
+| 강수확률 | `WeightedAverageStrategy` (가중 평균) | KMA 0.4 : Apple 0.3 : OWM 0.3 |
+| 날씨 상태 | `MajorityVoteStrategy` (가중 다수결) | KMA 0.4 : Apple 0.3 : OWM 0.3, `.unknown` 투표 제외 |
+| feelsLike | Apple → KMA → OWM 순 우선 | 소스 배열 삽입 순서 기준 (Apple 장애 시 KMA 대체) |
+| isDaytime | Apple → KMA → OWM 순 우선 | OWM은 일출/일몰 Unix timestamp 제공 |
 
-- 소스 장애 시 정상 소스 단독 사용 (nil-safe)
-- `EnsembleStrategy` 프로토콜로 추상화 → Google API 추가 시 3개 소스 다수결로 교체 가능
+- 소스 장애 시 정상 소스만 가중치 정규화하여 집계 (nil-safe)
+- `ensemble(apple:kma:owm:)` — `owm` 기본값 nil, 기존 2소스 호출도 그대로 동작
 - 수치 항목(`NumericEnsembleStrategy`)과 상태 항목(`StateEnsembleStrategy`) 전략 분리
 
 ---
