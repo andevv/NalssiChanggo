@@ -42,25 +42,27 @@ final class KMAWeatherDataSource {
             .tryMap { data, response -> Data in
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 NCLogger.response(statusCode: statusCode, body: data, category: .weather)
-                guard statusCode == 200 else { throw URLError(.badServerResponse) }
+                if statusCode == 429 {
+                    NCLogger.warning("KMA API 호출 한도 초과 (429) — 앙상블에서 제외", category: .weather)
+                    throw URLError(.badServerResponse)
+                }
+                guard statusCode == 200 else {
+                    NCLogger.warning("KMA 초단기실황 HTTP \(statusCode)", category: .weather)
+                    throw URLError(.badServerResponse)
+                }
                 return data
             }
             .decode(type: KMAResponse<KMANowcastItem>.self, decoder: JSONDecoder())
             .tryMap { response -> CurrentWeather in
                 let header = response.response.header
                 guard header.resultCode == "00" else {
-                    NCLogger.error("초단기실황 오류 \(header.resultCode): \(header.resultMsg)", category: .weather)
+                    NCLogger.warning("초단기실황 오류 \(header.resultCode): \(header.resultMsg)", category: .weather)
                     throw URLError(.cannotParseResponse)
                 }
                 let items = response.response.body.items.item
                 NCLogger.info("초단기실황 \(items.count)개 수신", category: .weather)
                 return try Self.mapToCurrentWeather(items: items)
             }
-            .handleEvents(receiveCompletion: { completion in
-                if case .failure(let e) = completion {
-                    NCLogger.error("fetchCurrentWeather 실패: \(e.localizedDescription)", category: .weather)
-                }
-            })
             .eraseToAnyPublisher()
     }
 
@@ -77,25 +79,27 @@ final class KMAWeatherDataSource {
             .tryMap { data, response -> Data in
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 NCLogger.response(statusCode: statusCode, body: data, category: .weather)
-                guard statusCode == 200 else { throw URLError(.badServerResponse) }
+                if statusCode == 429 {
+                    NCLogger.warning("KMA API 호출 한도 초과 (429) — 앙상블에서 제외", category: .weather)
+                    throw URLError(.badServerResponse)
+                }
+                guard statusCode == 200 else {
+                    NCLogger.warning("KMA 단기예보 HTTP \(statusCode)", category: .weather)
+                    throw URLError(.badServerResponse)
+                }
                 return data
             }
             .decode(type: KMAResponse<KMAForecastItem>.self, decoder: JSONDecoder())
             .tryMap { response -> (hourly: [HourlyForecast], daily: [DailyForecast]) in
                 let header = response.response.header
                 guard header.resultCode == "00" else {
-                    NCLogger.error("단기예보 오류 \(header.resultCode): \(header.resultMsg)", category: .weather)
+                    NCLogger.warning("단기예보 오류 \(header.resultCode): \(header.resultMsg)", category: .weather)
                     throw URLError(.cannotParseResponse)
                 }
                 let items = response.response.body.items.item
                 NCLogger.info("단기예보 \(items.count)개 수신", category: .weather)
                 return try Self.mapToForecasts(items: items)
             }
-            .handleEvents(receiveCompletion: { completion in
-                if case .failure(let e) = completion {
-                    NCLogger.error("fetchForecast 실패: \(e.localizedDescription)", category: .weather)
-                }
-            })
             .eraseToAnyPublisher()
     }
 

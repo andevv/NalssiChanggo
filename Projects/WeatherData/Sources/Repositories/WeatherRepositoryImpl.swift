@@ -30,7 +30,7 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .map(Optional.init)
             .handleEvents(receiveCompletion: {
                 if case .failure(let e) = $0 {
-                    NCLogger.error("Apple WeatherKit 실패: \(e.localizedDescription)", category: .weather)
+                    NCLogger.warning("Apple WeatherKit 소스 실패 (앙상블 제외): \(e.localizedDescription)", category: .weather)
                 }
             })
             .replaceError(with: nil)
@@ -42,7 +42,7 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .map(Optional.init)
             .handleEvents(receiveCompletion: {
                 if case .failure(let e) = $0 {
-                    NCLogger.error("KMA 실패: \(e.localizedDescription)", category: .weather)
+                    NCLogger.warning("KMA 소스 실패 (앙상블 제외): \(e.localizedDescription)", category: .weather)
                 }
             })
             .replaceError(with: nil)
@@ -54,7 +54,7 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .map(Optional.init)
             .handleEvents(receiveCompletion: {
                 if case .failure(let e) = $0 {
-                    NCLogger.error("OWM 실패: \(e.localizedDescription)", category: .weather)
+                    NCLogger.warning("OWM 소스 실패 (앙상블 제외): \(e.localizedDescription)", category: .weather)
                 }
             })
             .replaceError(with: nil)
