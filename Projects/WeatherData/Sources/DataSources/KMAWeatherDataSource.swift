@@ -19,8 +19,25 @@ final class KMAWeatherDataSource {
         return fetchCurrentWeather(nx: grid.nx, ny: grid.ny)
             .combineLatest(fetchForecast(nx: grid.nx, ny: grid.ny))
             .map { current, forecast in
-                WeatherSummary(
-                    current: current,
+                // 초단기실황은 SKY 카테고리를 제공하지 않아 강수 없을 때 state가 .unknown이 됨.
+                // 단기예보의 현재 시각 슬롯 state로 보완한다.
+                let resolvedState: WeatherState
+                if current.state == .unknown, let nearest = forecast.hourly.first {
+                    resolvedState = nearest.state
+                } else {
+                    resolvedState = current.state
+                }
+                let patchedCurrent = CurrentWeather(
+                    temperature: current.temperature,
+                    feelsLike:   current.feelsLike,
+                    state:       resolvedState,
+                    isDaytime:   current.isDaytime,
+                    humidity:    current.humidity,
+                    windSpeed:   current.windSpeed,
+                    date:        current.date
+                )
+                return WeatherSummary(
+                    current: patchedCurrent,
                     hourlyForecasts: forecast.hourly,
                     dailyForecasts: forecast.daily,
                     airQuality: nil
