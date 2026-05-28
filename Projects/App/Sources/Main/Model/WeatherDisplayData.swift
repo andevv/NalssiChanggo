@@ -43,6 +43,36 @@ struct WeatherDisplayData {
     // MARK: Daily Forecast (7일)
     let dailyForecast: [DailyForecastItem]
 
+    // MARK: Source Breakdown
+    let sourceBreakdown: SourceBreakdownDisplayData?
+
+    struct SourceBreakdownDisplayData {
+        struct SourceCard: Identifiable {
+            let id: String              // "apple", "kma", "owm"
+            let initial: String         // "A", "K", "O"
+            let name: String            // "Apple", "KMA 기상청", "OWM"
+            let temperature: Int
+            let conditionLabel: String
+            let weatherIcon: WeatherIcon
+            let weightBadge: String     // "× 1.0", "× 1.3"
+            let deviationLabel: String  // "+0.7°", "-0.3°", "±0°"
+            let deviationPositive: Bool
+            let rawDeviation: Double
+        }
+
+        let ensembleTemp: Int
+        let ensembleCondition: String
+        let ensembleIcon: WeatherIcon
+        let agreementPct: Int           // 0–100
+        let agreementLabel: String      // "세 소스 일치" / "소스 의견 갈림"
+        let avgAbsDeviationLabel: String // "Σ 0.8°"
+        let tempRangeMin: Double
+        let tempRangeMax: Double
+        let sources: [SourceCard]
+        let commentText: String
+        let updatedLabel: String        // "09:41 KST"
+    }
+
     struct DailyForecastItem: Identifiable {
         let id: Int
         let dayLabel: String        // "오늘", "월", "화", …
@@ -207,6 +237,11 @@ extension WeatherDisplayData {
         // Air Quality
         let air = summary.airQuality
 
+        // Source Breakdown
+        let sourceBreakdown = summary.sourceBreakdown.map {
+            makeSourceBreakdown($0, ensembleState: current.state, isDaytime: current.isDaytime)
+        }
+
         return WeatherDisplayData(
             receiptNo: receiptNo,
             location: locationName.isEmpty ? "위치 확인 중…" : locationName,
@@ -230,7 +265,95 @@ extension WeatherDisplayData {
             todayLow: todayLow,
             todayHigh: todayHigh,
             hourlyTimeline: hourlyTimeline,
-            dailyForecast: dailyForecast
+            dailyForecast: dailyForecast,
+            sourceBreakdown: sourceBreakdown
+        )
+    }
+
+    private static func makeSourceBreakdown(
+        _ breakdown: SourceBreakdown,
+        ensembleState: WeatherState,
+        isDaytime: Bool
+    ) -> SourceBreakdownDisplayData {
+        let minWeight = min(
+            breakdown.apple?.rawWeight ?? .greatestFiniteMagnitude,
+            breakdown.kma?.rawWeight   ?? .greatestFiniteMagnitude,
+            breakdown.owm?.rawWeight   ?? .greatestFiniteMagnitude
+        )
+
+        func weightBadge(_ w: Double) -> String {
+            let ratio = minWeight > 0 ? w / minWeight : 1
+            return String(format: "× %.1f", ratio)
+        }
+
+        func deviationLabel(_ dev: Double) -> String {
+            if abs(dev) < 0.05 { return "±0°" }
+            return dev > 0 ? String(format: "+%.1f°", dev) : String(format: "%.1f°", dev)
+        }
+
+        func card(id: String, initial: String, name: String, snap: SourceBreakdown.SourceSnapshot?) -> SourceBreakdownDisplayData.SourceCard? {
+            guard let s = snap else { return nil }
+            return SourceBreakdownDisplayData.SourceCard(
+                id: id,
+                initial: initial,
+                name: name,
+                temperature: Int(s.temperature.rounded()),
+                conditionLabel: s.state.koreanLabel,
+                weatherIcon: mapWeatherIcon(state: s.state, isDaytime: isDaytime),
+                weightBadge: weightBadge(s.rawWeight),
+                deviationLabel: deviationLabel(s.deviation),
+                deviationPositive: s.deviation >= 0,
+                rawDeviation: s.deviation
+            )
+        }
+
+        let cards = [
+            card(id: "apple", initial: "A", name: "Apple",     snap: breakdown.apple),
+            card(id: "kma",   initial: "K", name: "KMA 기상청", snap: breakdown.kma),
+            card(id: "owm",   initial: "O", name: "OWM",       snap: breakdown.owm),
+        ].compactMap { $0 }
+
+        // 온도 범위 (바 스케일링용)
+        let allTemps = cards.map { Double($0.temperature) } + [breakdown.ensembleTemperature]
+        let rangeMin = (allTemps.min() ?? breakdown.ensembleTemperature) - 1
+        let rangeMax = (allTemps.max() ?? breakdown.ensembleTemperature) + 1
+
+        let agreementPct = Int((breakdown.agreement * 100).rounded())
+        let agreementLabel: String
+        switch agreementPct {
+        case 90...: agreementLabel = "세 소스 일치"
+        case 70...: agreementLabel = "대체로 일치"
+        case 50...: agreementLabel = "소스 의견 갈림"
+        default:    agreementLabel = "소스 불일치"
+        }
+
+        let commentText: String
+        switch agreementPct {
+        case 90...: commentText = "세 군데 모두 비슷한 값이에요. 앙상블을 믿어도 좋겠어요 👌"
+        case 70...: commentText = "소스 간 차이가 크지 않아요. KMA 가중치를 높여 보정했어요."
+        case 50...: commentText = "소스 간 의견이 갈려요. 실제 날씨와 함께 참고해 주세요."
+        default:    commentText = "소스 간 차이가 커요. 직접 날씨를 확인해 보시는 게 좋겠어요 ☁️"
+        }
+
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm"
+        timeFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
+        let updatedLabel = "\(timeFormatter.string(from: Date())) KST"
+
+        let avgDevLabel = String(format: "Σ %.1f°", breakdown.avgAbsDeviation)
+
+        return SourceBreakdownDisplayData(
+            ensembleTemp: Int(breakdown.ensembleTemperature.rounded()),
+            ensembleCondition: ensembleState.koreanLabel,
+            ensembleIcon: mapWeatherIcon(state: ensembleState, isDaytime: isDaytime),
+            agreementPct: agreementPct,
+            agreementLabel: agreementLabel,
+            avgAbsDeviationLabel: avgDevLabel,
+            tempRangeMin: rangeMin,
+            tempRangeMax: rangeMax,
+            sources: cards,
+            commentText: commentText,
+            updatedLabel: updatedLabel
         )
     }
 
@@ -313,7 +436,39 @@ extension WeatherDisplayData {
                 DailyForecastItem(id: 4, dayLabel: "토",   dateLabel: "5/31", isToday: false, isSunday: false, lowTemp: 15, highTemp: 25, precipitationPct:  0, icon: .sun),
                 DailyForecastItem(id: 5, dayLabel: "일",   dateLabel: "6/01", isToday: false, isSunday: true,  lowTemp: 13, highTemp: 23, precipitationPct: 35, icon: .cloud),
                 DailyForecastItem(id: 6, dayLabel: "월",   dateLabel: "6/02", isToday: false, isSunday: false, lowTemp: 11, highTemp: 19, precipitationPct: 80, icon: .cloudHeavyRain),
-            ]
+            ],
+            sourceBreakdown: SourceBreakdownDisplayData(
+                ensembleTemp: 19,
+                ensembleCondition: "구름 조금",
+                ensembleIcon: .cloudSun,
+                agreementPct: 92,
+                agreementLabel: "세 소스 일치",
+                avgAbsDeviationLabel: "Σ 0.6°",
+                tempRangeMin: 17.0,
+                tempRangeMax: 21.0,
+                sources: [
+                    SourceBreakdownDisplayData.SourceCard(
+                        id: "apple", initial: "A", name: "Apple",
+                        temperature: 18, conditionLabel: "대체로 맑음", weatherIcon: .cloudSun,
+                        weightBadge: "× 1.0", deviationLabel: "-0.8°",
+                        deviationPositive: false, rawDeviation: -0.8
+                    ),
+                    SourceBreakdownDisplayData.SourceCard(
+                        id: "kma", initial: "K", name: "KMA 기상청",
+                        temperature: 20, conditionLabel: "구름 조금", weatherIcon: .cloudSun,
+                        weightBadge: "× 1.3", deviationLabel: "+0.7°",
+                        deviationPositive: true, rawDeviation: 0.7
+                    ),
+                    SourceBreakdownDisplayData.SourceCard(
+                        id: "owm", initial: "O", name: "OWM",
+                        temperature: 19, conditionLabel: "맑음", weatherIcon: .sun,
+                        weightBadge: "× 1.0", deviationLabel: "-0.3°",
+                        deviationPositive: false, rawDeviation: -0.3
+                    ),
+                ],
+                commentText: "세 군데 모두 비슷한 값이에요. 앙상블을 믿어도 좋겠어요 👌",
+                updatedLabel: "09:41 KST"
+            )
         )
     }
 }

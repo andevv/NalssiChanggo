@@ -21,7 +21,8 @@ struct MainView: View {
                 WeatherContentView(
                     data: data,
                     attributionMarkURL: viewModel.attributionMarkURL,
-                    attributionLegalURL: viewModel.attributionLegalURL
+                    attributionLegalURL: viewModel.attributionLegalURL,
+                    onRefresh: { viewModel.retry() }
                 )
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
@@ -45,13 +46,14 @@ private struct WeatherContentView: View {
     let data: WeatherDisplayData
     let attributionMarkURL: URL?
     let attributionLegalURL: URL?
+    let onRefresh: () -> Void
 
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: NCSpacing.section) {
                     HeaderSection(data: data)
-                    WeatherHeroCard(data: data)
+                    WeatherHeroCard(data: data, onRefresh: onRefresh)
                     AirRainRow(data: data)
                     OutfitCard(data: data)
                     HourlyTimelineCard(data: data)

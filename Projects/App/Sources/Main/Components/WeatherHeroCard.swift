@@ -3,6 +3,9 @@ import DesignSystem
 
 struct WeatherHeroCard: View {
     let data: WeatherDisplayData
+    let onRefresh: () -> Void
+
+    @State private var showBreakdown = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -36,7 +39,7 @@ struct WeatherHeroCard: View {
                     .foregroundStyle(Color.ink2)
                     .padding(.top, 4)
 
-                // 구분선 + 소스 정보
+                // 구분선 + 소스 정보 (탭 힌트 포함)
                 VStack(alignment: .leading, spacing: 0) {
                     DashedDivider()
                         .padding(.bottom, 12)
@@ -53,23 +56,36 @@ struct WeatherHeroCard: View {
                             .foregroundStyle(Color.goldDeep)
 
                         Spacer()
-                    }
 
-                    Text("가중 앙상블 · KMA 40 : Apple 30 : OWM 30")
-                        .font(NCFont.labelSmall)
-                        .foregroundStyle(Color.ink3)
-                        .padding(.top, 6)
+                        if data.sourceBreakdown != nil {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Color.goldDeep)
+                        }
+                    }
                 }
                 .padding(.top, NCSpacing.cardInner)
             }
             .padding(NCSpacing.cardInner + 4)
             .ncCardGold()
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if data.sourceBreakdown != nil {
+                showBreakdown = true
+            }
+        }
+        .sheet(isPresented: $showBreakdown) {
+            SourceBreakdownView(data: data, onRefresh: {
+                showBreakdown = false
+                onRefresh()
+            })
+        }
     }
 }
 
 #Preview {
-    WeatherHeroCard(data: .preview)
+    WeatherHeroCard(data: .preview, onRefresh: {})
         .padding()
         .background(Color.appBg)
 }

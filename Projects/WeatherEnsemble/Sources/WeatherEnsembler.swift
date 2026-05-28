@@ -46,11 +46,18 @@ public struct WeatherEnsembler {
         if let k = kma   { sources.append((k, kmaWeight)) }
         if let o = owm   { sources.append((o, owmWeight)) }
 
-        switch sources.count {
-        case 0: return nil
-        case 1: return sources[0].0
-        default: return mergeSources(sources)
-        }
+        guard !sources.isEmpty else { return nil }
+
+        let merged = sources.count == 1 ? sources[0].0 : mergeSources(sources)
+        let breakdown = buildSourceBreakdown(apple: apple, kma: kma, owm: owm,
+                                             ensembleTemp: merged.current.temperature)
+        return WeatherSummary(
+            current: merged.current,
+            hourlyForecasts: merged.hourlyForecasts,
+            dailyForecasts: merged.dailyForecasts,
+            airQuality: merged.airQuality,
+            sourceBreakdown: breakdown
+        )
     }
 
     // MARK: - 내부 병합
@@ -154,6 +161,56 @@ public struct WeatherEnsembler {
                 state: stateStrategy.combine(states)
             )
         }
+    }
+
+    // MARK: - SourceBreakdown 생성
+
+    private func buildSourceBreakdown(
+        apple: WeatherSummary?,
+        kma: WeatherSummary?,
+        owm: WeatherSummary?,
+        ensembleTemp: Double
+    ) -> SourceBreakdown {
+        func snapshot(_ summary: WeatherSummary?, weight: Double) -> SourceBreakdown.SourceSnapshot? {
+            guard let s = summary else { return nil }
+            return SourceBreakdown.SourceSnapshot(
+                temperature: s.current.temperature,
+                state:       s.current.state,
+                humidity:    s.current.humidity,
+                windSpeed:   s.current.windSpeed,
+                rawWeight:   weight,
+                deviation:   s.current.temperature - ensembleTemp
+            )
+        }
+
+        let appleSnap = snapshot(apple, weight: appleWeight)
+        let kmaSnap   = snapshot(kma,   weight: kmaWeight)
+        let owmSnap   = snapshot(owm,   weight: owmWeight)
+
+        let deviations = [appleSnap, kmaSnap, owmSnap]
+            .compactMap { $0?.deviation }
+        let avgAbsDev = deviations.isEmpty ? 0
+            : deviations.map { abs($0) }.reduce(0, +) / Double(deviations.count)
+
+        // 표준편차 기반 일치도 (5°C 이상 분산 = 0%, 0°C = 100%)
+        let temps = [appleSnap, kmaSnap, owmSnap].compactMap { $0?.temperature }
+        let agreement: Double
+        if temps.count <= 1 {
+            agreement = 1.0
+        } else {
+            let mean   = temps.reduce(0, +) / Double(temps.count)
+            let stdDev = sqrt(temps.map { ($0 - mean) * ($0 - mean) }.reduce(0, +) / Double(temps.count))
+            agreement  = max(0, 1.0 - stdDev / 5.0)
+        }
+
+        return SourceBreakdown(
+            apple: appleSnap,
+            kma:   kmaSnap,
+            owm:   owmSnap,
+            ensembleTemperature: ensembleTemp,
+            agreement:           agreement,
+            avgAbsDeviation:     avgAbsDev
+        )
     }
 
     // MARK: - 날짜 보조

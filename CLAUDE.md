@@ -155,6 +155,7 @@ enum Secrets {
 
 - 일일 호출 한도: `getUltraSrtNcst` + `getVilageFcst` 공유 (VilageFcstInfoService_2.0 서비스 기준)
 - Lambert 격자 변환: `Core/LambertConverter.swift` — `LambertConverter.convert(latitude:longitude:) → GridPoint`
+- **SKY 보완**: `getUltraSrtNcst`는 SKY(하늘 상태) 카테고리를 제공하지 않아 강수 없을 때 `state = .unknown`이 됨. `KMAWeatherDataSource`에서 두 API 결과를 합산할 때 `current.state == .unknown`이면 `getVilageFcst` 첫 슬롯의 state로 덮어씀
 
 ### OpenWeatherMap API 엔드포인트
 
@@ -189,6 +190,7 @@ enum Secrets {
 - 소스 장애 시 정상 소스만 가중치 정규화하여 집계 (nil-safe)
 - `ensemble(apple:kma:owm:)` — `owm` 기본값 nil, 기존 2소스 호출도 그대로 동작
 - 수치 항목(`NumericEnsembleStrategy`)과 상태 항목(`StateEnsembleStrategy`) 전략 분리
+- 앙상블 결과에 `SourceBreakdown`을 함께 생성하여 `WeatherSummary.sourceBreakdown`에 포함 — 소스별 기온·상태·편차, 소스 간 일치도(표준편차 기반 0–1), 평균 절대편차 보관
 
 ---
 
@@ -200,12 +202,13 @@ enum Secrets {
 View/
   MainView.swift          # ScrollView 루트, WeatherContentView 조합
 Components/
-  WeatherHeroCard.swift   # 현재 기온·날씨 상태·앙상블 소스 표시
+  WeatherHeroCard.swift   # 현재 기온·날씨 상태·앙상블 소스 표시 — 탭 시 SourceBreakdownView sheet
+  SourceBreakdownView.swift # 소스별 날씨 비교 sheet (영수증 스타일)
   AirRainRow.swift        # 대기질 카드 + 강수 카드 (가로 2분할)
   OutfitCard.swift        # 옷차림 추천
   HourlyTimelineCard.swift # 시간별 예보 (가로 스크롤)
 Model/
-  WeatherDisplayData.swift # WeatherSummary → View용 표시 데이터 매핑
+  WeatherDisplayData.swift # WeatherSummary → View용 표시 데이터 매핑 (SourceBreakdownDisplayData 포함)
   OutfitRecommender.swift  # 체감 온도·강수 확률 기반 옷차림 추천
 ```
 

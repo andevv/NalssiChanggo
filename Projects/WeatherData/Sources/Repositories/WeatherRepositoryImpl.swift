@@ -85,7 +85,8 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
                     current: summary.current,
                     hourlyForecasts: summary.hourlyForecasts,
                     dailyForecasts: summary.dailyForecasts,
-                    airQuality: airQuality
+                    airQuality: airQuality,
+                    sourceBreakdown: summary.sourceBreakdown
                 )
                 return summary
             }
