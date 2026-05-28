@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import Combine
+import WeatherKit
 import WeatherDomain
 import WeatherData
 import Location
@@ -12,6 +13,10 @@ final class MainViewModel {
     var displayData: WeatherDisplayData?
     var isLoading = false
     var errorMessage: String?
+
+    // MARK: Attribution (WeatherKit 라이선스 요구)
+    var attributionMarkURL: URL?
+    var attributionLegalURL: URL?
 
     // MARK: Dependencies
     let locationManager: LocationManager
@@ -30,6 +35,15 @@ final class MainViewModel {
         guard let coord = locationManager.coordinate else { return }
         isLoading = true
         errorMessage = nil
+
+        // WeatherKit attribution 마크 URL (라이선스 요건 — async/await만 지원하는 WeatherKit API)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if let attr = try? await WeatherService.shared.attribution {
+                attributionMarkURL = attr.combinedMarkLightURL
+                attributionLegalURL = attr.legalPageURL
+            }
+        }
 
         weatherTask = useCase.execute(latitude: coord.latitude, longitude: coord.longitude, locationName: locationManager.locationName)
             .receive(on: DispatchQueue.main)

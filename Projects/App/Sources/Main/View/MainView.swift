@@ -18,7 +18,11 @@ struct MainView: View {
             .ignoresSafeArea()
 
             if let data = viewModel.displayData {
-                WeatherContentView(data: data)
+                WeatherContentView(
+                    data: data,
+                    attributionMarkURL: viewModel.attributionMarkURL,
+                    attributionLegalURL: viewModel.attributionLegalURL
+                )
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
                     viewModel.retry()
@@ -39,19 +43,26 @@ struct MainView: View {
 
 private struct WeatherContentView: View {
     let data: WeatherDisplayData
+    let attributionMarkURL: URL?
+    let attributionLegalURL: URL?
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: NCSpacing.section) {
-                HeaderSection(data: data)
-                WeatherHeroCard(data: data)
-                AirRainRow(data: data)
-                OutfitCard(data: data)
-                HourlyTimelineCard(data: data)
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: NCSpacing.section) {
+                    HeaderSection(data: data)
+                    WeatherHeroCard(data: data)
+                    AirRainRow(data: data)
+                    OutfitCard(data: data)
+                    HourlyTimelineCard(data: data)
+                }
+                .padding(.horizontal, NCSpacing.screenH)
+                .padding(.top, NCSpacing.base)
+                .padding(.bottom, NCSpacing.medium)
+
+                AttributionFooter(markURL: attributionMarkURL, legalURL: attributionLegalURL)
+                    .padding(.horizontal, NCSpacing.screenH)
             }
-            .padding(.horizontal, NCSpacing.screenH)
-            .padding(.top, NCSpacing.base)
-            .padding(.bottom, NCSpacing.medium)
         }
     }
 }
