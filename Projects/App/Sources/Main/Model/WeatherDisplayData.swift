@@ -40,6 +40,21 @@ struct WeatherDisplayData {
     let todayHigh: Int?
     let hourlyTimeline: [HourlyItem]
 
+    // MARK: Daily Forecast (7일)
+    let dailyForecast: [DailyForecastItem]
+
+    struct DailyForecastItem: Identifiable {
+        let id: Int
+        let dayLabel: String        // "오늘", "월", "화", …
+        let dateLabel: String       // "5/27" 형식
+        let isToday: Bool
+        let isSunday: Bool
+        let lowTemp: Int
+        let highTemp: Int
+        let precipitationPct: Int   // 0–100
+        let icon: WeatherIcon
+    }
+
     struct HourlyItem: Identifiable {
         let id: Int
         let hourLabel: String
@@ -145,6 +160,41 @@ extension WeatherDisplayData {
         let todayLow  = today.map { Int($0.lowTemperature.rounded()) }
         let todayHigh = today.map { Int($0.highTemperature.rounded()) }
 
+        // 7일 예보
+        let koDayFormatter = DateFormatter()
+        koDayFormatter.locale = Locale(identifier: "ko_KR")
+        koDayFormatter.dateFormat = "E"
+
+        let shortDateFormatter = DateFormatter()
+        shortDateFormatter.dateFormat = "M/d"
+
+        // 현재 시각 슬롯의 강수 확률 (hourlyForecasts 첫 번째 = "지금" 슬롯)
+        let nowPrecipPct = Int((upcomingHours.first?.precipitationChance ?? 0) * 100)
+
+        let dailyForecast: [DailyForecastItem] = summary.dailyForecasts.prefix(7).enumerated().map { idx, daily in
+            let isToday = Calendar.current.isDate(daily.date, inSameDayAs: now)
+            let dayLabel = isToday ? "오늘" : koDayFormatter.string(from: daily.date)
+            let weekday = Calendar.current.component(.weekday, from: daily.date)
+
+            // 오늘 행: 날씨 상태·강수 확률을 앙상블 현재 관측값으로 덮어씀 (영웅 카드와 동일한 소스)
+            let icon = isToday
+                ? mapWeatherIcon(state: current.state, isDaytime: current.isDaytime)
+                : mapWeatherIcon(state: daily.state, isDaytime: true)
+            let precipPct = isToday ? nowPrecipPct : Int(daily.precipitationChance * 100)
+
+            return DailyForecastItem(
+                id: idx,
+                dayLabel: dayLabel,
+                dateLabel: shortDateFormatter.string(from: daily.date),
+                isToday: isToday,
+                isSunday: weekday == 1,
+                lowTemp: Int(daily.lowTemperature.rounded()),
+                highTemp: Int(daily.highTemperature.rounded()),
+                precipitationPct: precipPct,
+                icon: icon
+            )
+        }
+
         // Outfit
         let maxRainChance = peakHour?.precipitationChance ?? 0
         let outfit = OutfitRecommender.recommend(
@@ -179,7 +229,8 @@ extension WeatherDisplayData {
             outfitChips: outfit.chips,
             todayLow: todayLow,
             todayHigh: todayHigh,
-            hourlyTimeline: hourlyTimeline
+            hourlyTimeline: hourlyTimeline,
+            dailyForecast: dailyForecast
         )
     }
 
@@ -253,7 +304,16 @@ extension WeatherDisplayData {
                                precipitationPct: pcts[i], icon: icons[i],
                                isNow: i == 0, dayLabel: dayLabels[i])
                 }
-            }()
+            }(),
+            dailyForecast: [
+                DailyForecastItem(id: 0, dayLabel: "오늘", dateLabel: "5/27", isToday: true,  isSunday: false, lowTemp: 14, highTemp: 22, precipitationPct: 60, icon: .cloudRain),
+                DailyForecastItem(id: 1, dayLabel: "수",   dateLabel: "5/28", isToday: false, isSunday: false, lowTemp: 13, highTemp: 20, precipitationPct: 40, icon: .cloud),
+                DailyForecastItem(id: 2, dayLabel: "목",   dateLabel: "5/29", isToday: false, isSunday: false, lowTemp: 12, highTemp: 21, precipitationPct: 20, icon: .cloudSun),
+                DailyForecastItem(id: 3, dayLabel: "금",   dateLabel: "5/30", isToday: false, isSunday: false, lowTemp: 14, highTemp: 24, precipitationPct:  5, icon: .sun),
+                DailyForecastItem(id: 4, dayLabel: "토",   dateLabel: "5/31", isToday: false, isSunday: false, lowTemp: 15, highTemp: 25, precipitationPct:  0, icon: .sun),
+                DailyForecastItem(id: 5, dayLabel: "일",   dateLabel: "6/01", isToday: false, isSunday: true,  lowTemp: 13, highTemp: 23, precipitationPct: 35, icon: .cloud),
+                DailyForecastItem(id: 6, dayLabel: "월",   dateLabel: "6/02", isToday: false, isSunday: false, lowTemp: 11, highTemp: 19, precipitationPct: 80, icon: .cloudHeavyRain),
+            ]
         )
     }
 }
