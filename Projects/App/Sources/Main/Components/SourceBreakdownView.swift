@@ -7,6 +7,14 @@ struct SourceBreakdownView: View {
     let onRefresh: () -> Void
     @Environment(\.dismiss) private var dismiss
 
+    private var cooldownHintLabel: String? {
+        guard !isRefreshEnabled,
+              let last = UserDefaults.standard.object(forKey: "lastRefreshedAt") as? Date else { return nil }
+        let remaining = 600 - Date().timeIntervalSince(last)
+        guard remaining > 0 else { return nil }
+        return "\(max(1, Int(ceil(remaining / 60))))분 후 새로고침 가능"
+    }
+
     var body: some View {
         ZStack {
             Color.paper.ignoresSafeArea()
@@ -29,7 +37,7 @@ struct SourceBreakdownView: View {
 
                             CommentBlock(text: bd.commentText)
 
-                            UpdatedFooter(label: bd.updatedLabel, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
+                            UpdatedFooter(label: bd.updatedLabel, isRefreshEnabled: isRefreshEnabled, cooldownHintLabel: cooldownHintLabel, onRefresh: onRefresh)
                         }
                         .padding(.horizontal, NCSpacing.screenH)
                         .padding(.top, NCSpacing.medium)
@@ -357,29 +365,50 @@ private struct CommentBlock: View {
 private struct UpdatedFooter: View {
     let label: String
     let isRefreshEnabled: Bool
+    let cooldownHintLabel: String?
     let onRefresh: () -> Void
 
+    @State private var showHint = false
+
     var body: some View {
-        HStack {
-            Text("UPDATED · \(label)")
-                .font(NCFont.monoEyebrow)
-                .foregroundStyle(Color.ink3)
-                .tracking(1)
-                .textCase(.uppercase)
+        VStack(alignment: .trailing, spacing: 6) {
+            HStack {
+                Text("UPDATED · \(label)")
+                    .font(NCFont.monoEyebrow)
+                    .foregroundStyle(Color.ink3)
+                    .tracking(1)
+                    .textCase(.uppercase)
 
-            Spacer()
+                Spacer()
 
-            Button(action: onRefresh) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 10, weight: .medium))
-                    Text("새로고침")
-                        .font(NCFont.monoEyebrow)
-                        .tracking(0.5)
+                Button {
+                    if isRefreshEnabled {
+                        onRefresh()
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.2)) { showHint = true }
+                        Task {
+                            try? await Task.sleep(for: .seconds(2.5))
+                            withAnimation(.easeInOut(duration: 0.3)) { showHint = false }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 10, weight: .medium))
+                        Text("새로고침")
+                            .font(NCFont.monoEyebrow)
+                            .tracking(0.5)
+                    }
+                    .foregroundStyle(isRefreshEnabled ? Color.goldDeep : Color.ink4)
                 }
-                .foregroundStyle(isRefreshEnabled ? Color.goldDeep : Color.ink4)
             }
-            .disabled(!isRefreshEnabled)
+
+            if showHint, let hint = cooldownHintLabel {
+                Text(hint)
+                    .font(NCFont.monoTiny)
+                    .foregroundStyle(Color.ink3)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
     }
 }
