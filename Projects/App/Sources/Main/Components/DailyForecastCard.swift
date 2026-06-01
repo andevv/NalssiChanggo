@@ -4,8 +4,8 @@ import DesignSystem
 struct DailyForecastCard: View {
     let data: WeatherDisplayData
 
-    private var weekLow: Int  { data.dailyForecast.map(\.lowTemp).min()  ?? 0  }
-    private var weekHigh: Int { data.dailyForecast.map(\.highTemp).max() ?? 40 }
+    private var weekLow: Int  { min(data.dailyForecast.map(\.lowTemp).min()  ?? 0,  data.temperature) }
+    private var weekHigh: Int { max(data.dailyForecast.map(\.highTemp).max() ?? 40, data.temperature) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -141,8 +141,11 @@ private struct TempRangeBar: View {
         return r > 0 ? r : 1
     }
 
-    private var leadingFraction: Double { Double(low  - weekLow) / weekRange }
-    private var widthFraction:   Double { max(Double(high - low) / weekRange, 0.06) }
+    private var effectiveLow:  Int { currentTemp.map { min(low,  $0) } ?? low  }
+    private var effectiveHigh: Int { currentTemp.map { max(high, $0) } ?? high }
+
+    private var leadingFraction: Double { Double(effectiveLow  - weekLow) / weekRange }
+    private var widthFraction:   Double { max(Double(effectiveHigh - effectiveLow) / weekRange, 0.06) }
 
     private func currentFraction(_ total: CGFloat) -> CGFloat {
         guard let cur = currentTemp else { return 0 }
