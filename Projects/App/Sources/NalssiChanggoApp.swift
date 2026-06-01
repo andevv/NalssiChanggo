@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseCore
+import FirebaseAnalytics
 import DesignSystem
 import Location
 import WeatherData
@@ -9,6 +11,7 @@ struct NalssiChanggoApp: App {
     private let viewModel: MainViewModel
 
     init() {
+        FirebaseApp.configure()
         FontRegistrar.register()
 
         let locationManager = LocationManager()

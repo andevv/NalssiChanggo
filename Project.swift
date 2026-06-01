@@ -46,6 +46,17 @@ let project = Project(
                 // App Groups — Widget과 데이터 공유
                 "com.apple.security.application-groups": .array([.string(appGroupId)]),
             ]),
+            scripts: [
+                .post(
+                    script: "\"${SRCROOT}/Tuist/.build/checkouts/firebase-ios-sdk/Crashlytics/run\"",
+                    name: "Firebase Crashlytics dSYM Upload",
+                    inputPaths: [
+                        "${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+                        "${SRCROOT}/Projects/App/Resources/GoogleService-Info.plist",
+                    ],
+                    basedOnDependencyAnalysis: false
+                ),
+            ],
             dependencies: [
                 .target(name: "NalssiChanggoWidget"),
                 .target(name: "Core"),
@@ -54,6 +65,8 @@ let project = Project(
                 .target(name: "WeatherEnsemble"),
                 .target(name: "Location"),
                 .target(name: "DesignSystem"),
+                .external(name: "FirebaseAnalytics"),
+                .external(name: "FirebaseCrashlytics"),
             ],
             settings: .settings(
                 base: [
