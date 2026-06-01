@@ -10,6 +10,8 @@ public final class LocationManager: NSObject {
     /// 위치가 갱신될 때마다 증가 — View의 task(id:) 트리거용
     public private(set) var locationVersion: Int = 0
     public private(set) var locationError: Error?
+    /// 위치 취득 실패 (권한 거부 포함) — View의 .onChange 트리거용
+    public private(set) var locationFailed: Bool = false
 
     private let clManager = CLLocationManager()
     // 중복 요청 방지 — requestLocation() 진행 중이면 재호출 무시
@@ -19,12 +21,15 @@ public final class LocationManager: NSObject {
         super.init()
         clManager.delegate = self
         clManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        // authorizationStatus는 delegate 설정 전 읽어야 locationManagerDidChangeAuthorization 초기 호출과 겹치지 않음
         authorizationStatus = clManager.authorizationStatus
+        // delegate 초기 발화가 notDetermined일 때는 requestLocation()이 호출되지 않으므로
+        // init에서 직접 호출: notDetermined → 권한 다이얼로그, authorized → guard로 무시됨
+        requestLocation()
     }
 
     public func requestLocation() {
         guard !isRequestingLocation else { return }
+        locationFailed = false
         switch clManager.authorizationStatus {
         case .notDetermined:
             clManager.requestWhenInUseAuthorization()
@@ -60,15 +65,21 @@ extension LocationManager: CLLocationManagerDelegate {
     ) {
         isRequestingLocation = false
         locationError = error
+        locationFailed = true
     }
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let newStatus = manager.authorizationStatus
         authorizationStatus = newStatus
-        // delegate 설정 시 초기 발화 + 권한 변경 시 발화 모두 여기서 처리
-        // View는 requestLocation()을 직접 호출하지 않으므로, 위치 요청의 유일한 자동 진입점
-        if newStatus == .authorizedWhenInUse || newStatus == .authorizedAlways {
+        switch newStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            // 권한 허가 시 위치 요청 시작 (init 호출과 중복되더라도 guard로 무시됨)
             requestLocation()
+        case .denied, .restricted:
+            // 권한 거부 — 에러뷰 전환을 위해 실패 플래그 설정
+            locationFailed = true
+        default:
+            break
         }
     }
 

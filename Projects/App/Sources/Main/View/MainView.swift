@@ -38,6 +38,10 @@ struct MainView: View {
         .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
             viewModel.loadWeather()
         }
+        // 위치 취득 실패(권한 거부·fetch 오류) 시 에러뷰로 전환
+        .onChange(of: viewModel.locationManager.locationFailed) { _, failed in
+            if failed { viewModel.handleLocationFailure() }
+        }
         .trackScreen("메인 화면")
     }
 }
