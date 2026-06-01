@@ -22,6 +22,7 @@ struct MainView: View {
                     data: data,
                     attributionMarkURL: viewModel.attributionMarkURL,
                     attributionLegalURL: viewModel.attributionLegalURL,
+                    isRefreshEnabled: !viewModel.isCoolingDown,
                     onRefresh: { viewModel.retry() }
                 )
             } else if let errorMessage = viewModel.errorMessage {
@@ -46,6 +47,7 @@ private struct WeatherContentView: View {
     let data: WeatherDisplayData
     let attributionMarkURL: URL?
     let attributionLegalURL: URL?
+    let isRefreshEnabled: Bool
     let onRefresh: () -> Void
 
     var body: some View {
@@ -53,7 +55,7 @@ private struct WeatherContentView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: NCSpacing.section) {
                     HeaderSection(data: data)
-                    WeatherHeroCard(data: data, onRefresh: onRefresh)
+                    WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
                     AirRainRow(data: data)
                     OutfitCard(data: data)
                     HourlyTimelineCard(data: data)

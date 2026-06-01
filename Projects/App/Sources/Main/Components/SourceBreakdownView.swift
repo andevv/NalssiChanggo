@@ -3,6 +3,7 @@ import DesignSystem
 
 struct SourceBreakdownView: View {
     let data: WeatherDisplayData
+    let isRefreshEnabled: Bool
     let onRefresh: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -28,7 +29,7 @@ struct SourceBreakdownView: View {
 
                             CommentBlock(text: bd.commentText)
 
-                            UpdatedFooter(label: bd.updatedLabel, onRefresh: onRefresh)
+                            UpdatedFooter(label: bd.updatedLabel, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
                         }
                         .padding(.horizontal, NCSpacing.screenH)
                         .padding(.top, NCSpacing.medium)
@@ -355,6 +356,7 @@ private struct CommentBlock: View {
 
 private struct UpdatedFooter: View {
     let label: String
+    let isRefreshEnabled: Bool
     let onRefresh: () -> Void
 
     var body: some View {
@@ -375,8 +377,9 @@ private struct UpdatedFooter: View {
                         .font(NCFont.monoEyebrow)
                         .tracking(0.5)
                 }
-                .foregroundStyle(Color.goldDeep)
+                .foregroundStyle(isRefreshEnabled ? Color.goldDeep : Color.ink4)
             }
+            .disabled(!isRefreshEnabled)
         }
     }
 }
@@ -392,5 +395,5 @@ private extension Font {
 // MARK: - Preview
 
 #Preview {
-    SourceBreakdownView(data: .preview, onRefresh: {})
+    SourceBreakdownView(data: .preview, isRefreshEnabled: true, onRefresh: {})
 }

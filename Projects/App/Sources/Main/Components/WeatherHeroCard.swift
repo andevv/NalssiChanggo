@@ -3,6 +3,7 @@ import DesignSystem
 
 struct WeatherHeroCard: View {
     let data: WeatherDisplayData
+    let isRefreshEnabled: Bool
     let onRefresh: () -> Void
 
     @State private var showBreakdown = false
@@ -76,7 +77,7 @@ struct WeatherHeroCard: View {
             }
         }
         .sheet(isPresented: $showBreakdown) {
-            SourceBreakdownView(data: data, onRefresh: {
+            SourceBreakdownView(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: {
                 showBreakdown = false
                 onRefresh()
             })
@@ -85,7 +86,7 @@ struct WeatherHeroCard: View {
 }
 
 #Preview {
-    WeatherHeroCard(data: .preview, onRefresh: {})
+    WeatherHeroCard(data: .preview, isRefreshEnabled: true, onRefresh: {})
         .padding()
         .background(Color.appBg)
 }

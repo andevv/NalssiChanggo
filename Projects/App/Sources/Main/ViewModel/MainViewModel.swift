@@ -13,6 +13,9 @@ final class MainViewModel {
     var displayData: WeatherDisplayData?
     var isLoading = false
     var errorMessage: String?
+    private(set) var isCoolingDown = false
+
+    private static let refreshCooldown: Duration = .seconds(600)
 
     // MARK: Attribution (WeatherKit 라이선스 요구)
     var attributionMarkURL: URL?
@@ -33,8 +36,14 @@ final class MainViewModel {
 
     func loadWeather() {
         guard let coord = locationManager.coordinate else { return }
+        guard !isCoolingDown else { return }
         isLoading = true
         errorMessage = nil
+        isCoolingDown = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: MainViewModel.refreshCooldown)
+            self?.isCoolingDown = false
+        }
 
         // WeatherKit attribution 마크 URL (라이선스 요건 — async/await만 지원하는 WeatherKit API)
         Task { @MainActor [weak self] in
