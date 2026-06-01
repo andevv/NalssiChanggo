@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import DesignSystem
 import WeatherDomain
 
@@ -25,6 +26,11 @@ struct MainView: View {
                     isRefreshEnabled: !viewModel.isCoolingDown,
                     onRefresh: { viewModel.refreshWeather() }
                 )
+            } else if viewModel.locationManager.authorizationStatus == .denied
+                        || viewModel.locationManager.authorizationStatus == .restricted {
+                // authorizationStatus는 @Observable이므로 init 시점부터 올바른 값을 가짐
+                // → 재실행 후 거부 상태여도 onChange 없이 즉시 이 뷰가 렌더링됨
+                LocationPermissionDeniedView()
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
                     viewModel.retry()
@@ -38,7 +44,7 @@ struct MainView: View {
         .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
             viewModel.loadWeather()
         }
-        // 위치 취득 실패(권한 거부·fetch 오류) 시 에러뷰로 전환
+        // 위치 fetch 오류 시 에러뷰로 전환 (권한 거부는 authorizationStatus로 직접 처리)
         .onChange(of: viewModel.locationManager.locationFailed) { _, failed in
             if failed { viewModel.handleLocationFailure() }
         }
@@ -153,6 +159,44 @@ private struct WeatherErrorView: View {
                 .multilineTextAlignment(.center)
             Button(action: onRetry) {
                 Text("다시 시도")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.goldDeep)
+                    .padding(.horizontal, NCSpacing.medium)
+                    .padding(.vertical, NCSpacing.small)
+                    .background(Color.goldSoft)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(Color.goldEdge, lineWidth: 1))
+            }
+        }
+        .padding(NCSpacing.screenH)
+    }
+}
+
+// MARK: - 위치 권한 거부
+
+private struct LocationPermissionDeniedView: View {
+    var body: some View {
+        VStack(spacing: NCSpacing.section) {
+            WeatherIconView(.cloud, size: 48)
+                .foregroundStyle(Color.ink4)
+
+            VStack(spacing: NCSpacing.small) {
+                Text("위치 권한이 필요합니다")
+                    .font(NCFont.monoEmphasis)
+                    .foregroundStyle(Color.ink)
+
+                Text("날씨 정보를 제공하려면\n위치 접근 권한이 필요합니다.")
+                    .font(NCFont.monoBody)
+                    .foregroundStyle(Color.ink3)
+                    .multilineTextAlignment(.center)
+            }
+
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Text("설정에서 권한 허용하기")
                     .font(NCFont.monoEmphasis)
                     .foregroundStyle(Color.goldDeep)
                     .padding(.horizontal, NCSpacing.medium)

@@ -66,14 +66,13 @@ final class MainViewModel {
         fetchWeather()
     }
 
-    /// 위치 취득 실패 시 에러 메시지 표시 — MainView의 .onChange(locationFailed)에서 호출
+    /// 위치 fetch 오류 시 에러 메시지 표시 — MainView의 .onChange(locationFailed)에서 호출
+    /// 권한 거부(.denied / .restricted)는 MainView에서 authorizationStatus로 직접 처리하므로 여기서 제외
     func handleLocationFailure() {
+        guard locationManager.authorizationStatus != .denied,
+              locationManager.authorizationStatus != .restricted else { return }
         isLoading = false
-        let isDenied = locationManager.authorizationStatus == .denied
-            || locationManager.authorizationStatus == .restricted
-        errorMessage = isDenied
-            ? "위치 권한이 없습니다.\n설정 앱에서 위치 접근을 허용해 주세요."
-            : "위치 정보를 가져올 수 없습니다.\n잠시 후 다시 시도해 주세요."
+        errorMessage = "위치 정보를 가져올 수 없습니다.\n잠시 후 다시 시도해 주세요."
     }
 
     func retry() {
