@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+    <!-- 앱이 ATT 의미의 크로스앱 추적을 수행하지 않음 -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!-- 추적 목적으로 접속하는 도메인 없음 -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <!-- Required Reason API 사용 선언 -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <!-- UserDefaults: 새로고침 쿨다운(lastRefreshedAt) 저장에 사용 -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: 앱 자신이 기록한 데이터를 읽기 위해 접근 -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- 수집하는 데이터 유형 선언 -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+        <!-- 정밀 위치: 현재 위치 기반 날씨 조회에만 사용, 서버 저장/추적 없음 -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypePreciseLocation</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+    </array>
+
+</dict>
+</plist>
