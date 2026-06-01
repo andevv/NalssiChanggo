@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAnalytics
 import DesignSystem
 
 struct SourceBreakdownView: View {
@@ -46,6 +47,7 @@ struct SourceBreakdownView: View {
                 }
             }
         }
+        .trackScreen("소스 비교")
     }
 }
 

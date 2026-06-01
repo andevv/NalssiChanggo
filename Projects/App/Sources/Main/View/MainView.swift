@@ -38,6 +38,7 @@ struct MainView: View {
         .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
             viewModel.loadWeather()
         }
+        .trackScreen("메인 화면")
     }
 }
 
