@@ -13,9 +13,13 @@ final class MainViewModel {
     var displayData: WeatherDisplayData?
     var isLoading = false
     var errorMessage: String?
-    private(set) var isCoolingDown = false
+    private(set) var isCoolingDown: Bool = {
+        guard let last = UserDefaults.standard.object(forKey: "lastRefreshedAt") as? Date else { return false }
+        return Date().timeIntervalSince(last) < 600
+    }()
 
-    private static let refreshCooldown: Duration = .seconds(600)
+    private static let refreshCooldownInterval: TimeInterval = 600
+    private static let lastRefreshedAtKey = "lastRefreshedAt"
 
     // MARK: Attribution (WeatherKit 라이선스 요구)
     var attributionMarkURL: URL?
@@ -30,20 +34,47 @@ final class MainViewModel {
     init(useCase: FetchWeatherUseCaseProtocol, locationManager: LocationManager) {
         self.useCase = useCase
         self.locationManager = locationManager
+        resumeCooldownIfNeeded()
     }
 
     // MARK: Actions
 
-    func loadWeather() {
-        guard let coord = locationManager.coordinate else { return }
-        guard !isCoolingDown else { return }
-        isLoading = true
-        errorMessage = nil
-        isCoolingDown = true
+    private func resumeCooldownIfNeeded() {
+        guard let last = UserDefaults.standard.object(forKey: MainViewModel.lastRefreshedAtKey) as? Date else { return }
+        let remaining = MainViewModel.refreshCooldownInterval - Date().timeIntervalSince(last)
+        guard remaining > 0 else { return }
         Task { @MainActor [weak self] in
-            try? await Task.sleep(for: MainViewModel.refreshCooldown)
+            try? await Task.sleep(for: .seconds(remaining))
             self?.isCoolingDown = false
         }
+    }
+
+    // 위치 갱신 등 자동 트리거 — 쿨다운 무시
+    func loadWeather() {
+        fetchWeather()
+    }
+
+    // 수동 새로고침 버튼 — 쿨다운 적용
+    func refreshWeather() {
+        guard !isCoolingDown else { return }
+        isCoolingDown = true
+        UserDefaults.standard.set(Date(), forKey: MainViewModel.lastRefreshedAtKey)
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(MainViewModel.refreshCooldownInterval))
+            self?.isCoolingDown = false
+        }
+        fetchWeather()
+    }
+
+    func retry() {
+        locationManager.requestLocation()
+        fetchWeather()
+    }
+
+    private func fetchWeather() {
+        guard let coord = locationManager.coordinate else { return }
+        isLoading = true
+        errorMessage = nil
 
         // WeatherKit attribution 마크 URL (라이선스 요건 — async/await만 지원하는 WeatherKit API)
         Task { @MainActor [weak self] in
@@ -72,11 +103,6 @@ final class MainViewModel {
                     )
                 }
             )
-    }
-
-    func retry() {
-        locationManager.requestLocation()
-        loadWeather()
     }
 }
 

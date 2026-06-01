@@ -23,7 +23,7 @@ struct MainView: View {
                     attributionMarkURL: viewModel.attributionMarkURL,
                     attributionLegalURL: viewModel.attributionLegalURL,
                     isRefreshEnabled: !viewModel.isCoolingDown,
-                    onRefresh: { viewModel.retry() }
+                    onRefresh: { viewModel.refreshWeather() }
                 )
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
