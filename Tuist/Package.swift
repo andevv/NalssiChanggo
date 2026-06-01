@@ -6,12 +6,13 @@ import PackageDescription
 
     let packageSettings = PackageSettings(
         productTypes: [
-            "FirebaseAnalytics": .framework,
+            // 실제 소스 코드가 있는 타겟만 dynamic framework으로 변환
+            // FirebaseAnalytics / GoogleAppMeasurement 래퍼는 dummy.m만 있어서
+            // static(기본값) 유지해야 binary XCFramework 코드가 앱에 링크됨
             "FirebaseCore": .framework,
             "FirebaseCoreInternal": .framework,
             "FirebaseInstallations": .framework,
             "FirebaseSessions": .framework,
-            "GoogleAppMeasurement": .framework,
             "GoogleDataTransport": .framework,
             "GoogleUtilities": .framework,
             "GoogleUtilities-AppDelegateSwizzler": .framework,

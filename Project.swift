@@ -76,6 +76,8 @@ let project = Project(
                     "CURRENT_PROJECT_VERSION": "1",
                     "INFOPLIST_KEY_CFBundleDisplayName": "날씨창고",
                     "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.weather",
+                    // Firebase static 바이너리의 ObjC 클래스가 dead-strip되지 않도록 강제 링크
+                    "OTHER_LDFLAGS": ["$(inherited)", "-ObjC"],
                 ]
             )
         ),
