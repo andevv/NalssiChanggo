@@ -42,7 +42,7 @@ let project = Project(
                 // WeatherKit
                 "com.apple.developer.weatherkit": .boolean(true),
                 // Push Notification — 배포 시 "production"으로 변경
-                "aps-environment": .string("development"),
+                "aps-environment": .string("production"),
                 // App Groups — Widget과 데이터 공유
                 "com.apple.security.application-groups": .array([.string(appGroupId)]),
             ]),
