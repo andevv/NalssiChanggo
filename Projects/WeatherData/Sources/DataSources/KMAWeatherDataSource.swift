@@ -284,12 +284,12 @@ final class KMAWeatherDataSource {
         let dailyForecasts: [DailyForecast] = dailyAgg.keys.sorted().compactMap { dayKey in
             guard let date = dayFmt.date(from: dayKey) else { return nil }
             let agg = dailyAgg[dayKey]!
-            // TMX/TMN 둘 다 없으면 해당 날은 제외
-            guard agg.tmx != nil || agg.tmn != nil else { return nil }
+            // TMX/TMN 둘 다 있어야 유효한 일별 데이터로 간주
+            guard let tmn = agg.tmn, let tmx = agg.tmx else { return nil }
             return DailyForecast(
                 date: date,
-                lowTemperature: agg.tmn ?? 0.0,
-                highTemperature: agg.tmx ?? 0.0,
+                lowTemperature: tmn,
+                highTemperature: tmx,
                 precipitationChance: agg.maxPop / 100.0,
                 state: weatherState(sky: agg.sky, pty: agg.pty ?? 0)
             )
