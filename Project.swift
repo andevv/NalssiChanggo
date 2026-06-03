@@ -108,6 +108,7 @@ let project = Project(
             bundleId: "com.andev.nalssichanggo.widget",
             deploymentTargets: .iOS("17.0"),
             infoPlist: .extendingDefault(with: [
+                "CFBundleDisplayName": "날씨창고",
                 "NSExtension": [
                     "NSExtensionPointIdentifier": "com.apple.widgetkit-extension",
                 ],
