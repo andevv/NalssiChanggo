@@ -53,7 +53,9 @@
 
 ## 스크린샷
 
-> 스크린샷 추가 예정
+<img width="200" src="https://github.com/user-attachments/assets/8e6502ce-43b6-4070-a30f-ceb7206ae23c" />
+<img width="200" src="https://github.com/user-attachments/assets/b8b8a419-5469-4687-9a8d-95d6b8fb6736" />
+<img width="200" src="https://github.com/user-attachments/assets/7582576b-81e6-4a6e-8dfd-810b1bb6079c" />
 
 ---
 
@@ -322,8 +324,6 @@ enum Secrets {
 
 ## 라이선스
 
-본 프로젝트는 개인 포트폴리오 목적으로 제작되었습니다.
-
-- 기상청 데이터: [공공데이터포털 이용약관](https://www.data.go.kr/ugs/selectPortalUseTermView.do)
+- 기상청 데이터: [공공데이터포털 이용약관](https://www.data.go.kr/ugs/selectPortalPolicyView.do)
 - Apple WeatherKit: [WeatherKit 라이선스](https://developer.apple.com/weatherkit/data-source-attribution/)
 - OpenWeatherMap: [Terms of Service](https://openweathermap.org/terms)
