@@ -45,6 +45,13 @@ public enum NCFont {
     /// 극소형 — 9pt Medium
     public static let monoTiny: Font      = .ibmPlexMono(size: 9, weight: .medium)
 
+    // MARK: - 위젯 전용 (systemSmall 기온 표시용)
+
+    /// 위젯 메인 기온 — 48pt Bold
+    public static let widgetTemp: Font = .pretendard(size: 48, weight: .bold)
+    /// 위젯 도(°) 기호 — 28pt Medium
+    public static let widgetDeg: Font  = .pretendard(size: 28, weight: .medium)
+
     // MARK: - 손글씨 액센트 (Caveat)
 
     /// 손글씨 액센트 — 14pt Medium
