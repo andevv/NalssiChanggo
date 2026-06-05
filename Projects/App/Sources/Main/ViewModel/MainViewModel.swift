@@ -113,6 +113,7 @@ final class MainViewModel {
                         summary: summary,
                         locationName: locationManager.locationName
                     )
+                    WidgetDataWriter.write(summary: summary, locationName: locationManager.locationName)
                 }
             )
     }
