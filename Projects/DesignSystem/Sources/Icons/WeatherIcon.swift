@@ -15,6 +15,24 @@ public enum WeatherIcon: String, CaseIterable, Sendable {
     case starsNight       = "stars-night"
 
     var assetName: String { "Weather/\(rawValue)" }
+
+    /// accessoryInline 잠금화면 위젯 전용 SF Symbol 이름
+    public var sfSymbolName: String {
+        switch self {
+        case .sun:            return "sun.max"
+        case .cloud:          return "cloud"
+        case .cloudSun:       return "cloud.sun"
+        case .cloudRain:      return "cloud.rain"
+        case .cloudHeavyRain: return "cloud.heavyrain"
+        case .cloudSnow:      return "cloud.snow"
+        case .cloudStorm:     return "cloud.bolt.rain"
+        case .fog:            return "cloud.fog"
+        case .wind:           return "wind"
+        case .moon:           return "moon"
+        case .moonCloud:      return "cloud.moon"
+        case .starsNight:     return "moon.stars"
+        }
+    }
 }
 
 // MARK: - View

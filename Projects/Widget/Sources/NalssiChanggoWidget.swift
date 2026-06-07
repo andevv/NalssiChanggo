@@ -14,6 +14,7 @@ struct NalssiChanggoWidgetBundle: WidgetBundle {
 
     var body: some Widget {
         NalssiChanggoWidget()
+        LockScreenWeatherWidget()
     }
 }
 
@@ -209,6 +210,154 @@ private struct EmptyWidgetView: View {
     }
 }
 
+// MARK: - Lock Screen Widget Configuration
+
+struct LockScreenWeatherWidget: Widget {
+    let kind = "LockScreenWeatherWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: WeatherTimelineProvider()) { entry in
+            LockScreenWidgetEntryView(entry: entry)
+        }
+        .configurationDisplayName("날씨창고")
+        .description("잠금 화면에서 현재 날씨를 확인하세요.")
+        .supportedFamilies([.accessoryInline, .accessoryCircular, .accessoryRectangular])
+    }
+}
+
+// MARK: - Lock Screen Root Entry View
+
+private struct LockScreenWidgetEntryView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: WeatherEntry
+
+    var body: some View {
+        Group {
+            if let snapshot = entry.snapshot {
+                switch family {
+                case .accessoryInline:
+                    AccessoryInlineWidgetView(snapshot: snapshot)
+                case .accessoryCircular:
+                    AccessoryCircularWidgetView(snapshot: snapshot)
+                case .accessoryRectangular:
+                    AccessoryRectangularWidgetView(snapshot: snapshot)
+                default:
+                    EmptyView()
+                }
+            } else {
+                switch family {
+                case .accessoryInline:
+                    Label("날씨창고", systemImage: "cloud.sun")
+                case .accessoryCircular:
+                    ZStack {
+                        AccessoryWidgetBackground()
+                        Image(systemName: "cloud.sun")
+                            .font(.system(size: 20))
+                    }
+                case .accessoryRectangular:
+                    Label("앱을 열어 날씨를 불러오세요", systemImage: "cloud.sun")
+                default:
+                    EmptyView()
+                }
+            }
+        }
+        .widgetURL(URL(string: "nalssichanggo://main"))
+        .containerBackground(.clear, for: .widget)
+    }
+}
+
+// MARK: - Accessory Inline View
+
+private struct AccessoryInlineWidgetView: View {
+    let snapshot: WidgetWeatherSnapshot
+
+    private var sfSymbol: String {
+        WeatherIcon(rawValue: snapshot.weatherIconRaw)?.sfSymbolName ?? "cloud.sun"
+    }
+
+    var body: some View {
+        Label("\(snapshot.temperature)° \(snapshot.conditionLabel)", systemImage: sfSymbol)
+    }
+}
+
+// MARK: - Accessory Circular View
+
+private struct AccessoryCircularWidgetView: View {
+    let snapshot: WidgetWeatherSnapshot
+
+    private var icon: WeatherIcon {
+        WeatherIcon(rawValue: snapshot.weatherIconRaw) ?? .cloudSun
+    }
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 1) {
+                WeatherIconView(icon, size: 20)
+                    .widgetAccentable()
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text("\(snapshot.temperature)")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    Text("°")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            }
+        }
+    }
+}
+
+// MARK: - Accessory Rectangular View
+
+private struct AccessoryRectangularWidgetView: View {
+    let snapshot: WidgetWeatherSnapshot
+
+    private var icon: WeatherIcon {
+        WeatherIcon(rawValue: snapshot.weatherIconRaw) ?? .cloudSun
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            // 아이콘 + 기온
+            VStack(alignment: .center, spacing: 0) {
+                WeatherIconView(icon, size: 28)
+                    .widgetAccentable()
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text("\(snapshot.temperature)")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                    Text("°")
+                        .font(.system(size: 16, weight: .medium))
+                        .offset(y: -1)
+                }
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            }
+
+            // 날씨 상태 + 최저최고 + 강수
+            VStack(alignment: .leading, spacing: 3) {
+                Text(snapshot.conditionLabel)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+
+                if let low = snapshot.todayLow, let high = snapshot.todayHigh {
+                    Text("↓\(low)° ↑\(high)°")
+                        .font(.system(size: 12, weight: .regular, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                if snapshot.precipitationChance >= 10 {
+                    Label("\(snapshot.precipitationChance)%", systemImage: "drop.fill")
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+}
+
 // MARK: - Placeholder Snapshot
 
 private extension WidgetWeatherSnapshot {
@@ -237,6 +386,43 @@ private extension WidgetWeatherSnapshot {
     NalssiChanggoWidget()
 } timeline: {
     WeatherEntry(date: .now, snapshot: nil)
+}
+
+#Preview("잠금화면 인라인", as: .accessoryInline) {
+    LockScreenWeatherWidget()
+} timeline: {
+    WeatherEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview("잠금화면 원형", as: .accessoryCircular) {
+    LockScreenWeatherWidget()
+} timeline: {
+    WeatherEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview("잠금화면 직사각형", as: .accessoryRectangular) {
+    LockScreenWeatherWidget()
+} timeline: {
+    WeatherEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview("잠금화면 직사각형 — 강수 있음", as: .accessoryRectangular) {
+    LockScreenWeatherWidget()
+} timeline: {
+    WeatherEntry(
+        date: .now,
+        snapshot: WidgetWeatherSnapshot(
+            temperature: 18,
+            feelsLike: 15,
+            conditionLabel: "구름 많음",
+            weatherIconRaw: WeatherIcon.cloudRain.rawValue,
+            precipitationChance: 60,
+            todayLow: 12,
+            todayHigh: 22,
+            locationName: "서울 강남구",
+            updatedAt: Date()
+        )
+    )
 }
 
 #Preview("만료된 데이터", as: .systemSmall) {
