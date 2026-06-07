@@ -20,6 +20,7 @@ let project = Project(
                 with: [
                     "CFBundleDisplayName": "날씨창고",
                     "CFBundleDevelopmentRegion": "ko",
+                    "ITSAppUsesNonExemptEncryption": false,
                     "UILaunchScreen": [
                         "UIColorName": "",
                         "UIImageName": "",
