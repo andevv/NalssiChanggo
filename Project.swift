@@ -20,6 +20,8 @@ let project = Project(
                 with: [
                     "CFBundleDisplayName": "날씨창고",
                     "CFBundleDevelopmentRegion": "ko",
+                    "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                    "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                     "ITSAppUsesNonExemptEncryption": false,
                     "UILaunchScreen": [
                         "UIColorName": "",
