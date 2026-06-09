@@ -1,6 +1,9 @@
 import WidgetKit
 import SwiftUI
+import Combine
 import WeatherDomain
+import WeatherData
+import Core
 import DesignSystem
 
 // MARK: - Bundle Entry Point
@@ -54,19 +57,160 @@ struct WeatherTimelineProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WeatherEntry>) -> Void) {
-        let snapshot = WidgetWeatherSnapshot.load()
-        let entry = WeatherEntry(date: .now, snapshot: snapshot)
+        // 앱이 방금 fetch한 캐시가 있으면 그 값을 그대로 사용한다.
+        // reloadTimelines 트리거 → getTimeline 호출 사이의 시간은 통상 수 초~1분이므로,
+        // 10분 이내 캐시 = 앱이 쓴 데이터 → 위젯과 앱이 동일한 온도를 표시하게 된다.
+        if let appFreshSnapshot = WidgetWeatherSnapshot.load(),
+           Date().timeIntervalSince(appFreshSnapshot.updatedAt) < 10 * 60 {
+            let nextRefresh = appFreshSnapshot.updatedAt.addingTimeInterval(6 * 3600)
+            completion(buildTimelineFromSnapshot(appFreshSnapshot, nextRefresh: nextRefresh))
+            return
+        }
 
-        // 데이터 있고 6시간 내 — 앱이 갱신할 때까지 대기
-        // 데이터 없거나 만료 — 1시간 뒤 다시 시도 (앱이 미실행 상태인 fallback)
-        let policy: TimelineReloadPolicy = {
-            guard let snap = snapshot, !snap.isStale else {
-                return .after(Date().addingTimeInterval(3600))
+        // 캐시가 없거나 10분을 넘으면 위젯이 직접 앙상블 fetch
+        Task {
+            guard let location = LocationSnapshot.load() else {
+                completion(cachedTimeline() ?? emptyTimeline())
+                return
             }
-            return .never
-        }()
 
-        completion(Timeline(entries: [entry], policy: policy))
+            do {
+                let summary = try await fetchEnsembledWeather(location: location)
+                let entries = buildEntries(from: summary, locationName: location.locationName)
+                let nextRefresh = Date().addingTimeInterval(6 * 3600)
+                completion(Timeline(entries: entries, policy: .after(nextRefresh)))
+            } catch {
+                NCLogger.warning("Widget fetch 실패, 캐시 폴백: \(error.localizedDescription)", category: .weather)
+                let retry = Date().addingTimeInterval(30 * 60)
+                let timeline = cachedTimeline() ?? emptyTimeline()
+                completion(Timeline(entries: timeline.entries, policy: .after(retry)))
+            }
+        }
+    }
+
+    // MARK: - Fetch
+
+    private func fetchEnsembledWeather(location: LocationSnapshot) async throws -> WeatherSummary {
+        let repository = WeatherRepositoryImpl(
+            airKoreaAPIKey: nil,   // 위젯은 대기질 표시 없음
+            kmaAPIKey: Secrets.kmaServiceKey,
+            owmAPIKey: Secrets.openWeatherMapAPIKey
+        )
+        return try await repository
+            .fetchWeather(
+                latitude: location.latitude,
+                longitude: location.longitude,
+                locationName: location.locationName
+            )
+            .async()
+    }
+
+    // MARK: - Entry 빌더
+
+    private func buildEntries(from summary: WeatherSummary, locationName: String) -> [WeatherEntry] {
+        let now = Date()
+        let current = summary.current
+        let daily = summary.dailyForecasts.first
+
+        let currentSnapshot = WidgetWeatherSnapshot(
+            temperature: Int(current.temperature.rounded()),
+            feelsLike: Int(current.feelsLike.rounded()),
+            conditionLabel: current.state.koreanLabel,
+            weatherIconRaw: mapWeatherIcon(state: current.state, isDaytime: current.isDaytime).rawValue,
+            precipitationChance: Int(((daily?.precipitationChance) ?? 0) * 100),
+            todayLow: daily.map { Int($0.lowTemperature.rounded()) },
+            todayHigh: daily.map { Int($0.highTemperature.rounded()) },
+            locationName: locationName,
+            updatedAt: now
+        )
+
+        var entries = [WeatherEntry(date: now, snapshot: currentSnapshot)]
+
+        // 현재 이후 슬롯으로 최대 11개 Entry 추가 — WidgetKit이 각 시각에 자동 전환
+        let hourlyEntries: [WeatherEntry] = summary.hourlyForecasts
+            .filter { $0.date > now }
+            .prefix(11)
+            .map { forecast in
+                let hour = Calendar.current.component(.hour, from: forecast.date)
+                let isDaytime = (6..<20).contains(hour)
+                let hourlySnapshot = WidgetWeatherSnapshot(
+                    temperature: Int(forecast.temperature.rounded()),
+                    feelsLike: currentSnapshot.feelsLike,  // 시간별 예보에 체감온도 없음 — 현재값 유지
+                    conditionLabel: forecast.state.koreanLabel,
+                    weatherIconRaw: mapWeatherIcon(state: forecast.state, isDaytime: isDaytime).rawValue,
+                    precipitationChance: Int((forecast.precipitationChance * 100).rounded()),
+                    todayLow: currentSnapshot.todayLow,
+                    todayHigh: currentSnapshot.todayHigh,
+                    locationName: locationName,
+                    updatedAt: now
+                )
+                return WeatherEntry(date: forecast.date, snapshot: hourlySnapshot)
+            }
+
+        entries.append(contentsOf: hourlyEntries)
+        return entries
+    }
+
+    // MARK: - 캐시 기반 타임라인 빌더
+
+    private func buildTimelineFromSnapshot(
+        _ snapshot: WidgetWeatherSnapshot,
+        nextRefresh: Date
+    ) -> Timeline<WeatherEntry> {
+        let now = Date()
+        var entries = [WeatherEntry(date: now, snapshot: snapshot)]
+        let hourlyEntries: [WeatherEntry] = snapshot.hourlyForecasts
+            .filter { $0.date > now }
+            .map { hourly in
+                let hourlySnapshot = WidgetWeatherSnapshot(
+                    temperature: hourly.temperature,
+                    feelsLike: snapshot.feelsLike,
+                    conditionLabel: snapshot.conditionLabel,
+                    weatherIconRaw: hourly.weatherIconRaw,
+                    precipitationChance: hourly.precipitationChance,
+                    todayLow: snapshot.todayLow,
+                    todayHigh: snapshot.todayHigh,
+                    locationName: snapshot.locationName,
+                    updatedAt: snapshot.updatedAt
+                )
+                return WeatherEntry(date: hourly.date, snapshot: hourlySnapshot)
+            }
+        entries.append(contentsOf: hourlyEntries)
+        return Timeline(entries: entries, policy: .after(nextRefresh))
+    }
+
+    private func cachedTimeline() -> Timeline<WeatherEntry>? {
+        guard let snapshot = WidgetWeatherSnapshot.load() else { return nil }
+        return buildTimelineFromSnapshot(snapshot, nextRefresh: Date().addingTimeInterval(30 * 60))
+    }
+
+    private func emptyTimeline() -> Timeline<WeatherEntry> {
+        Timeline(entries: [WeatherEntry(date: .now, snapshot: nil)], policy: .after(Date().addingTimeInterval(3600)))
+    }
+}
+
+// MARK: - WeatherState → WeatherIcon 매핑
+
+private func mapWeatherIcon(state: WeatherState, isDaytime: Bool) -> WeatherIcon {
+    switch state {
+    case .clear, .mostlyClear, .hot:
+        return isDaytime ? .sun : .moon
+    case .partlyCloudy:
+        return isDaytime ? .cloudSun : .moonCloud
+    case .mostlyCloudy, .cloudy:
+        return .cloud
+    case .drizzle, .rain, .sleet:
+        return .cloudRain
+    case .heavyRain, .thunderstorm:
+        return .cloudHeavyRain
+    case .snow, .heavySnow, .blizzard, .frigid:
+        return .cloudSnow
+    case .fog, .haze:
+        return .fog
+    case .windy:
+        return .wind
+    case .unknown:
+        return isDaytime ? .cloudSun : .moonCloud
     }
 }
 

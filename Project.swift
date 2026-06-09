@@ -37,7 +37,8 @@ let project = Project(
                 ]
             ),
             sources: [
-                "Projects/App/Sources/**"
+                "Projects/App/Sources/**",
+                "Projects/Shared/Sources/**",
             ],
             resources: [
                 "Projects/App/Resources/**"
@@ -118,15 +119,22 @@ let project = Project(
                 ],
             ]),
             sources: [
-                "Projects/Widget/Sources/**"
+                "Projects/Widget/Sources/**",
+                "Projects/Shared/Sources/**",
             ],
             entitlements: .dictionary([
                 "com.apple.developer.weatherkit": .boolean(true),
                 "com.apple.security.application-groups": .array([.string(appGroupId)]),
             ]),
             dependencies: [
+                .target(name: "Core"),
                 .target(name: "WeatherDomain"),
+                .target(name: "WeatherEnsemble"),
+                .target(name: "WeatherData"),
+                .target(name: "Location"),
                 .target(name: "DesignSystem"),
+                .sdk(name: "WeatherKit",   type: .framework, status: .required),
+                .sdk(name: "CoreLocation", type: .framework, status: .required),
             ],
             settings: .settings(
                 base: [
