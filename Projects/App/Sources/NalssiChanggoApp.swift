@@ -16,7 +16,7 @@ struct NalssiChanggoApp: App {
 
         let locationManager = LocationManager()
         let repository = WeatherRepositoryImpl(
-            airKoreaAPIKey: Secrets.airKoreaAPIKey,
+            airKoreaAPIKey: Secrets.airKoreaAPIKey,   // 앱은 대기질 표시 — non-nil
             kmaAPIKey: Secrets.kmaServiceKey,
             owmAPIKey: Secrets.openWeatherMapAPIKey
         )

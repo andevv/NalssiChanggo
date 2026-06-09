@@ -54,7 +54,7 @@ Package.resolved
 ### Secrets ###
 .env
 .env.local
-Secrets.swift
+Projects/Shared/Sources/Secrets.swift
 GoogleService-Info.plist
 
 ### Logs ###
