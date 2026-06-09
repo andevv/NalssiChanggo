@@ -27,7 +27,7 @@ View → ViewModel(@Observable) → UseCase → Repository Protocol → Reposito
 | `WeatherEnsemble` | 3개 API 앙상블 집계 | WeatherDomain |
 | `Location` | CoreLocation 래핑 | Core |
 | `DesignSystem` | 디자인 토큰, 아이콘, 폰트 | 없음 |
-| `Widget` | 홈 화면 위젯 | WeatherDomain, DesignSystem |
+| `Widget` | 홈 화면 위젯 | Core, WeatherDomain, WeatherEnsemble, WeatherData, Location, DesignSystem |
 
 **의존 방향은 위 표의 순서로만 흐른다. 역방향 금지.**
 
@@ -111,14 +111,36 @@ Entitlements는 `Project.swift` `.entitlements(.dictionary([...]))` 블록에서
 ## Widget
 
 - 타겟: `NalssiChanggoWidget` / 소스: `Projects/Widget/Sources/`
-- App과 데이터 공유: App Groups → `UserDefaults(suiteName:)` 또는 파일
-- 네트워크 호출은 App 타겟 담당, Widget은 캐시된 데이터만 읽는다
+- App과 데이터 공유: App Groups → `UserDefaults(suiteName: "group.com.andev.nalssichanggo")`
+
+### 타임라인 전략
+
+`WeatherTimelineProvider.getTimeline` 진입 시 두 경로로 분기한다.
+
+| 조건 | 동작 | 다음 갱신 |
+|------|------|----------|
+| App Groups 캐시가 **10분 이내** | 앱이 방금 기록한 데이터를 그대로 사용 (앱·위젯 온도 일치 보장) | 캐시 기록 시각 + 6h |
+| 캐시가 **10분 초과** | 위젯이 직접 앙상블 fetch (KMA × OWM × WeatherKit) | fetch 시각 + 6h |
+| fetch 실패 | 캐시 폴백 | 30분 후 재시도 |
+
+- 성공 시 **Multi-Entry 타임라인** 구성: 현재 Entry + 시간별 예보 최대 11개 → WidgetKit이 매시 자동 전환
+- 앱 실행 → fetch 완료 → `WidgetDataWriter.write()` → `WidgetCenter.reloadTimelines` → `getTimeline` 재호출 → 10분 이내 캐시 감지 → 앱과 동일한 값 표시
+- Widget의 앙상블 fetch는 `airKoreaAPIKey: nil` (대기질 UI 없음 → AirKorea API 미호출)
+- `LocationSnapshot`: 앱이 위치 획득 시 좌표를 App Groups에 저장, Widget이 읽어 API 좌표로 사용
+- `WidgetDataWriter`: App 타겟, 날씨 fetch 완료 후 `WidgetWeatherSnapshot`(hourlyForecasts 포함) 기록 + 전체 위젯 kind reload
+- `LocationWriter`: App 타겟, 날씨 fetch 완료 후 `LocationSnapshot` 기록
+
+### API 호출 예산 (위젯)
+
+위젯 자체 fetch 1회 = KMA 2 + OWM 2 + WeatherKit = 외부 HTTP 4회.
+6시간 주기 × 4회 = **기기당 하루 약 16회** (KMA·OWM 기준).
 
 ---
 
 ## API 키 관리
 
-`Projects/App/Sources/Secrets.swift` (gitignore 등록, 직접 생성 필요)
+`Projects/Shared/Sources/Secrets.swift` (gitignore 등록, 직접 생성 필요)
+App과 Widget Extension 양쪽 타겟 소스에 포함된다.
 
 ```swift
 enum Secrets {
@@ -132,6 +154,7 @@ enum Secrets {
 - 기상청·에어코리아 키는 data.go.kr 활용 신청 후 발급
 - OpenWeatherMap 키는 openweathermap.org 회원가입 후 발급 (Free plan)
 - CI 환경: 환경변수 또는 시크릿 주입 방식 사용
+- Widget은 `airKoreaAPIKey`를 사용하지 않음 (`WeatherRepositoryImpl(airKoreaAPIKey: nil, ...)` 으로 초기화)
 
 ---
 
@@ -241,7 +264,8 @@ Model/
 
 - 변수·함수명 영어, 주석 한국어 허용
 - ViewModel에 `@Observable` 사용 (`ObservableObject` 사용 금지)
-- 네트워크 호출 기본 패턴: **Combine**
+- 네트워크 호출 기본 패턴: **Combine** (`AnyPublisher` 반환)
+- Widget의 `getTimeline` 내 async 컨텍스트에서 Publisher를 호출할 때는 `Core/Publisher+Async.swift`의 `.async()` 확장 사용
 - Repository 구현체 네이밍: `XxxRepositoryImpl`
 - DTO 네이밍: `XxxDTO` / Domain Entity: `Xxx` (접미사 없음)
 
