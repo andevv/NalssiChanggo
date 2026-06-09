@@ -7,13 +7,14 @@ import Core
 public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
 
     private let appleDataSource = AppleWeatherDataSource()
-    private let airKoreaDataSource: AirKoreaDataSource
+    /// nil이면 대기질 API를 호출하지 않는다 (위젯 등 대기질 불필요 컨텍스트)
+    private let airKoreaDataSource: AirKoreaDataSource?
     private let kmaDataSource: KMAWeatherDataSource
     private let owmDataSource: OpenWeatherMapDataSource
     private let ensembler = WeatherEnsembler()
 
-    public init(airKoreaAPIKey: String, kmaAPIKey: String, owmAPIKey: String) {
-        airKoreaDataSource = AirKoreaDataSource(apiKey: airKoreaAPIKey)
+    public init(airKoreaAPIKey: String?, kmaAPIKey: String, owmAPIKey: String) {
+        airKoreaDataSource = airKoreaAPIKey.map { AirKoreaDataSource(apiKey: $0) }
         kmaDataSource      = KMAWeatherDataSource(apiKey: kmaAPIKey)
         owmDataSource      = OpenWeatherMapDataSource(apiKey: owmAPIKey)
     }
@@ -61,12 +62,16 @@ public final class WeatherRepositoryImpl: WeatherRepositoryProtocol {
             .setFailureType(to: Error.self)
             .eraseToAnyPublisher()
 
-        let airPublisher: AnyPublisher<AirQualityData?, Error> = airKoreaDataSource
-            .fetchAirQuality(sidoName: sidoName)
-            .map(Optional.init)
-            .replaceError(with: nil)
-            .setFailureType(to: Error.self)
-            .eraseToAnyPublisher()
+        let airPublisher: AnyPublisher<AirQualityData?, Error> = {
+            guard let ds = airKoreaDataSource else {
+                return Just(nil).setFailureType(to: Error.self).eraseToAnyPublisher()
+            }
+            return ds.fetchAirQuality(sidoName: sidoName)
+                .map(Optional.init)
+                .replaceError(with: nil)
+                .setFailureType(to: Error.self)
+                .eraseToAnyPublisher()
+        }()
 
         return applePublisher
             .combineLatest(kmaPublisher, owmPublisher, airPublisher)

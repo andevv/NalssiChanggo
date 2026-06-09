@@ -114,6 +114,11 @@ final class MainViewModel {
                         locationName: locationManager.locationName
                     )
                     WidgetDataWriter.write(summary: summary, locationName: locationManager.locationName)
+                    LocationWriter.write(
+                        latitude: coord.latitude,
+                        longitude: coord.longitude,
+                        locationName: locationManager.locationName
+                    )
                 }
             )
     }
