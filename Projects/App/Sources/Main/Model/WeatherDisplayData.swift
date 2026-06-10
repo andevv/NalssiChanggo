@@ -212,6 +212,11 @@ extension WeatherDisplayData {
                 : mapWeatherIcon(state: daily.state, isDaytime: true)
             let precipPct = isToday ? nowPrecipPct : Int(daily.precipitationChance * 100)
 
+            // 현재 기온이 예보 최고를 초과하는 경우 실제 관측값을 오늘 최고로 반영
+            let highTemp = isToday
+                ? Int(max(daily.highTemperature, current.temperature).rounded())
+                : Int(daily.highTemperature.rounded())
+
             return DailyForecastItem(
                 id: idx,
                 dayLabel: dayLabel,
@@ -219,7 +224,7 @@ extension WeatherDisplayData {
                 isToday: isToday,
                 isSunday: weekday == 1,
                 lowTemp: Int(daily.lowTemperature.rounded()),
-                highTemp: Int(daily.highTemperature.rounded()),
+                highTemp: highTemp,
                 precipitationPct: precipPct,
                 icon: icon
             )
