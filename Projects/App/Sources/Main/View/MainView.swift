@@ -26,6 +26,7 @@ struct MainView: View {
                     isRefreshEnabled: !viewModel.isCoolingDown,
                     onRefresh: { viewModel.refreshWeather() }
                 )
+                .id(viewModel.loadVersion)
             } else if viewModel.locationManager.authorizationStatus == .denied
                         || viewModel.locationManager.authorizationStatus == .restricted {
                 // authorizationStatus는 @Observable이므로 init 시점부터 올바른 값을 가짐
@@ -66,11 +67,17 @@ private struct WeatherContentView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: NCSpacing.section) {
                     HeaderSection(data: data)
+                        .staggeredAppear(index: 0)
                     WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
+                        .staggeredAppear(index: 1)
                     AirRainRow(data: data)
+                        .staggeredAppear(index: 2)
                     OutfitCard(data: data)
+                        .staggeredAppear(index: 3)
                     HourlyTimelineCard(data: data)
+                        .staggeredAppear(index: 4)
                     DailyForecastCard(data: data)
+                        .staggeredAppear(index: 5)
                 }
                 .padding(.horizontal, NCSpacing.screenH)
                 .padding(.top, NCSpacing.base)

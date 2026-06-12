@@ -13,6 +13,8 @@ final class MainViewModel {
     var displayData: WeatherDisplayData?
     var isLoading = false
     var errorMessage: String?
+    // 새 데이터 도착마다 증가 — WeatherContentView .id()에 사용해 stagger 재실행
+    private(set) var loadVersion: Int = 0
     private(set) var isCoolingDown: Bool = {
         guard let last = UserDefaults.standard.object(forKey: "lastRefreshedAt") as? Date else { return false }
         return Date().timeIntervalSince(last) < 600
@@ -109,6 +111,7 @@ final class MainViewModel {
                 },
                 receiveValue: { [weak self] summary in
                     guard let self else { return }
+                    loadVersion += 1
                     displayData = WeatherDisplayData.from(
                         summary: summary,
                         locationName: locationManager.locationName
