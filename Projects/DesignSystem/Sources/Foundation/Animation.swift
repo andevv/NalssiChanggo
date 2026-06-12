@@ -7,8 +7,10 @@ extension Animation {
     public static let ncTapPress = Animation.spring(response: 0.2, dampingFraction: 0.9)
     /// 손가락을 떼고 튀어오르는 bounce 애니메이션
     public static let ncTapBounce = Animation.spring(response: 0.4, dampingFraction: 0.5)
-    /// 숫자 contentTransition 애니메이션
+    /// 숫자 contentTransition 애니메이션 (새로고침 시 값 변경)
     public static let ncNumeric = Animation.spring(response: 0.35, dampingFraction: 0.75)
+    /// 첫 진입 시 카운트업
+    public static let ncCountUp = Animation.spring(response: 0.4, dampingFraction: 0.9)
 }
 
 // MARK: - NCBounceButtonStyle

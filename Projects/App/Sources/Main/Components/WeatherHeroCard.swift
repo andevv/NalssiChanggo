@@ -7,6 +7,8 @@ struct WeatherHeroCard: View {
     let onRefresh: () -> Void
 
     @State private var showBreakdown = false
+    @State private var displayedTemperature: Double = 0
+    @State private var displayedFeelsLike: Double = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,12 +21,12 @@ struct WeatherHeroCard: View {
                         .foregroundStyle(Color.goldDeep)
 
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
-                        Text("\(data.temperature)")
-                            .font(NCFont.heroTemp)
-                            .foregroundStyle(Color.ink)
-                            .tracking(-3)
-                            .contentTransition(.numericText())
-                            .animation(.ncNumeric, value: data.temperature)
+                        CountingNumber(
+                            value: displayedTemperature,
+                            font: NCFont.heroTemp,
+                            color: Color.ink,
+                            tracking: -3
+                        )
                         Text("°")
                             .font(NCFont.heroDeg)
                             .foregroundStyle(Color.ink3)
@@ -36,12 +38,15 @@ struct WeatherHeroCard: View {
                     .padding(.bottom, 6)
                 }
 
-                // 날씨 상태 (feelsLike는 numericText 전환 적용)
+                // 날씨 상태
                 HStack(spacing: 0) {
                     Text("\(data.condition) · 체감 ")
-                    Text("\(data.feelsLike)")
-                        .contentTransition(.numericText())
-                        .animation(.ncNumeric, value: data.feelsLike)
+                    CountingNumber(
+                        value: displayedFeelsLike,
+                        font: NCFont.conditionBody,
+                        color: Color.ink2,
+                        tracking: 0
+                    )
                     Text("°")
                 }
                 .font(NCFont.conditionBody)
@@ -79,6 +84,24 @@ struct WeatherHeroCard: View {
             .ncCardGold()
         }
         .contentShape(Rectangle())
+        .onAppear {
+            // 실제값과 같은 자릿수의 시작값으로 즉시 설정 — 카운트 중 레이아웃 이동 방지
+            displayedTemperature = Double(Self.countUpStart(for: data.temperature))
+            displayedFeelsLike   = Double(Self.countUpStart(for: data.feelsLike))
+            // 다음 렌더 사이클에서 실제값까지 카운트업
+            DispatchQueue.main.async {
+                withAnimation(.ncCountUp) {
+                    displayedTemperature = Double(data.temperature)
+                    displayedFeelsLike   = Double(data.feelsLike)
+                }
+            }
+        }
+        .onChange(of: data.temperature) { _, newValue in
+            withAnimation(.ncNumeric) { displayedTemperature = Double(newValue) }
+        }
+        .onChange(of: data.feelsLike) { _, newValue in
+            withAnimation(.ncNumeric) { displayedFeelsLike = Double(newValue) }
+        }
         .bounceTap {
             if data.sourceBreakdown != nil {
                 showBreakdown = true
@@ -90,6 +113,38 @@ struct WeatherHeroCard: View {
                 onRefresh()
             })
         }
+    }
+
+    /// 카운트업 시작값: 실제값과 자릿수가 같아서 카운트 중 레이아웃이 변하지 않는다.
+    /// 예) 22 → 10, 5 → 0, -5 → -1, -15 → -10
+    private static func countUpStart(for value: Int) -> Int {
+        if value >= 10 { return 10 }
+        if value >= 0  { return 0  }
+        if value >= -9 { return -1 }
+        return -10
+    }
+}
+
+// MARK: - CountingNumber
+
+/// Animatable을 채택해 withAnimation의 response가 카운트 속도를 직접 제어한다.
+/// contentTransition과 달리 SwiftUI가 body를 프레임마다 보간된 value로 호출한다.
+private struct CountingNumber: View, Animatable {
+    var value: Double
+    let font: Font
+    let color: Color
+    let tracking: CGFloat
+
+    var animatableData: Double {
+        get { value }
+        set { value = newValue }
+    }
+
+    var body: some View {
+        Text("\(Int(value.rounded()))")
+            .font(font)
+            .foregroundStyle(color)
+            .tracking(tracking)
     }
 }
 
