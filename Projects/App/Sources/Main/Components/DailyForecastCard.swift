@@ -74,6 +74,8 @@ private struct DailyRow: View {
                 .font(NCFont.monoBody)
                 .foregroundStyle(item.isToday ? Color.goldDeep.opacity(0.65) : Color.ink4)
                 .frame(width: 28, alignment: .trailing)
+                .contentTransition(.numericText())
+                .animation(.ncNumeric, value: item.lowTemp)
 
             // 기온 범위 바
             TempRangeBar(
@@ -91,6 +93,8 @@ private struct DailyRow: View {
                 .font(item.isToday ? NCFont.labelLarge : NCFont.monoBody)
                 .foregroundStyle(Color.ink)
                 .frame(width: 28, alignment: .trailing)
+                .contentTransition(.numericText())
+                .animation(.ncNumeric, value: item.highTemp)
         }
         .padding(.horizontal, NCSpacing.cardInner)
         .padding(.vertical, 10)
@@ -120,6 +124,8 @@ private struct DailyRow: View {
                 Text("\(pct)%")
                     .font(NCFont.monoTiny)
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.65))
+                    .contentTransition(.numericText())
+                    .animation(.ncNumeric, value: pct)
             }
         } else {
             Color.clear
@@ -208,6 +214,8 @@ private struct TempRangeBar: View {
                     .font(NCFont.monoTiny)
                     .foregroundStyle(Color.goldDeep)
                     .fixedSize()
+                    .contentTransition(.numericText())
+                    .animation(.ncNumeric, value: cur)
                     .position(
                         x: min(max(thumbX, 10), total - 10),
                         y: geo.size.height / 2 - 12

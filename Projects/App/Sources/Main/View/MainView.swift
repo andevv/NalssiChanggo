@@ -21,12 +21,12 @@ struct MainView: View {
             if let data = viewModel.displayData {
                 WeatherContentView(
                     data: data,
+                    loadVersion: viewModel.loadVersion,
                     attributionMarkURL: viewModel.attributionMarkURL,
                     attributionLegalURL: viewModel.attributionLegalURL,
                     isRefreshEnabled: !viewModel.isCoolingDown,
                     onRefresh: { viewModel.refreshWeather() }
                 )
-                .id(viewModel.loadVersion)
             } else if viewModel.locationManager.authorizationStatus == .denied
                         || viewModel.locationManager.authorizationStatus == .restricted {
                 // authorizationStatus는 @Observable이므로 init 시점부터 올바른 값을 가짐
@@ -57,6 +57,7 @@ struct MainView: View {
 
 private struct WeatherContentView: View {
     let data: WeatherDisplayData
+    let loadVersion: Int
     let attributionMarkURL: URL?
     let attributionLegalURL: URL?
     let isRefreshEnabled: Bool
@@ -67,17 +68,17 @@ private struct WeatherContentView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: NCSpacing.section) {
                     HeaderSection(data: data)
-                        .staggeredAppear(index: 0)
+                        .staggeredAppear(index: 0, triggerID: loadVersion)
                     WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
-                        .staggeredAppear(index: 1)
+                        .staggeredAppear(index: 1, triggerID: loadVersion)
                     AirRainRow(data: data)
-                        .staggeredAppear(index: 2)
+                        .staggeredAppear(index: 2, triggerID: loadVersion)
                     OutfitCard(data: data)
-                        .staggeredAppear(index: 3)
+                        .staggeredAppear(index: 3, triggerID: loadVersion)
                     HourlyTimelineCard(data: data)
-                        .staggeredAppear(index: 4)
+                        .staggeredAppear(index: 4, triggerID: loadVersion)
                     DailyForecastCard(data: data)
-                        .staggeredAppear(index: 5)
+                        .staggeredAppear(index: 5, triggerID: loadVersion)
                 }
                 .padding(.horizontal, NCSpacing.screenH)
                 .padding(.top, NCSpacing.base)

@@ -7,6 +7,8 @@ extension Animation {
     public static let ncTapPress = Animation.spring(response: 0.2, dampingFraction: 0.9)
     /// 손가락을 떼고 튀어오르는 bounce 애니메이션
     public static let ncTapBounce = Animation.spring(response: 0.4, dampingFraction: 0.5)
+    /// 숫자 contentTransition 애니메이션
+    public static let ncNumeric = Animation.spring(response: 0.35, dampingFraction: 0.75)
 }
 
 // MARK: - NCBounceButtonStyle
@@ -66,29 +68,37 @@ extension View {
 // MARK: - Staggered Entrance
 
 /// 뷰가 처음 등장할 때 아래에서 위로 슬라이드하며 페이드인한다.
-/// index가 클수록 더 늦게 등장해 순차적인 카드 입장 효과를 만든다.
+/// triggerID가 바뀔 때마다 애니메이션이 재실행된다 (새로고침 등).
 private struct StaggeredAppearModifier: ViewModifier {
     let index: Int
+    let triggerID: Int
     @State private var appeared = false
 
     func body(content: Content) -> some View {
         content
             .offset(y: appeared ? 0 : 22)
             .opacity(appeared ? 1 : 0)
-            .onAppear {
-                withAnimation(
-                    .spring(response: 0.45, dampingFraction: 0.78)
-                    .delay(Double(index) * 0.055)
-                ) {
-                    appeared = true
-                }
+            .onAppear { animate() }
+            .onChange(of: triggerID) { _, _ in
+                withAnimation(.none) { appeared = false }
+                DispatchQueue.main.async { animate() }
             }
+    }
+
+    private func animate() {
+        withAnimation(
+            .spring(response: 0.45, dampingFraction: 0.78)
+            .delay(Double(index) * 0.055)
+        ) {
+            appeared = true
+        }
     }
 }
 
 extension View {
-    /// 카드 목록에서 순차 등장 애니메이션을 적용한다. index는 0부터 시작.
-    public func staggeredAppear(index: Int) -> some View {
-        modifier(StaggeredAppearModifier(index: index))
+    /// 카드 목록에서 순차 등장 애니메이션을 적용한다.
+    /// triggerID가 바뀌면 애니메이션이 재실행된다. index는 0부터 시작.
+    public func staggeredAppear(index: Int, triggerID: Int = 0) -> some View {
+        modifier(StaggeredAppearModifier(index: index, triggerID: triggerID))
     }
 }

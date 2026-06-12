@@ -159,6 +159,8 @@ private struct PMRow: View {
                 Text("\(value)")
                     .font(NCFont.monoEmphasis)
                     .foregroundStyle(Color.ink2)
+                    .contentTransition(.numericText())
+                    .animation(.ncNumeric, value: value)
                 Text(" μg/m³")
                     .font(NCFont.labelSmall)
                     .foregroundStyle(Color.ink3)

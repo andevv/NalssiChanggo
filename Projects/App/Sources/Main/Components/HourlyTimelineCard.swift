@@ -53,6 +53,8 @@ private struct HourlyCell: View {
                 .font(item.isNow ? NCFont.labelLarge : NCFont.monoBody)
                 .foregroundStyle(item.isNow ? Color.ink : Color.ink2)
                 .padding(.bottom, 4)
+                .contentTransition(.numericText())
+                .animation(.ncNumeric, value: item.temperature)
 
             // 강수 확률
             rainPctView(pct: item.precipitationPct)
@@ -81,6 +83,8 @@ private struct HourlyCell: View {
                 Text("\(pct)%")
                     .font(NCFont.monoTiny)
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.75))
+                    .contentTransition(.numericText())
+                    .animation(.ncNumeric, value: pct)
             }
         } else {
             Text("—")

@@ -23,6 +23,8 @@ struct WeatherHeroCard: View {
                             .font(NCFont.heroTemp)
                             .foregroundStyle(Color.ink)
                             .tracking(-3)
+                            .contentTransition(.numericText())
+                            .animation(.ncNumeric, value: data.temperature)
                         Text("°")
                             .font(NCFont.heroDeg)
                             .foregroundStyle(Color.ink3)
@@ -34,11 +36,17 @@ struct WeatherHeroCard: View {
                     .padding(.bottom, 6)
                 }
 
-                // 날씨 상태
-                Text("\(data.condition) · 체감 \(data.feelsLike)°")
-                    .font(NCFont.conditionBody)
-                    .foregroundStyle(Color.ink2)
-                    .padding(.top, 4)
+                // 날씨 상태 (feelsLike는 numericText 전환 적용)
+                HStack(spacing: 0) {
+                    Text("\(data.condition) · 체감 ")
+                    Text("\(data.feelsLike)")
+                        .contentTransition(.numericText())
+                        .animation(.ncNumeric, value: data.feelsLike)
+                    Text("°")
+                }
+                .font(NCFont.conditionBody)
+                .foregroundStyle(Color.ink2)
+                .padding(.top, 4)
 
                 // 구분선 + 소스 정보 (탭 힌트 포함)
                 VStack(alignment: .leading, spacing: 0) {
