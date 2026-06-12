@@ -531,6 +531,23 @@ private extension WidgetWeatherSnapshot {
     WeatherEntry(date: .now, snapshot: .placeholder)
 }
 
+#Preview("숫자 트랜지션", as: .systemSmall) {
+    NalssiChanggoWidget()
+} timeline: {
+    WeatherEntry(date: .now, snapshot: WidgetWeatherSnapshot(
+        temperature: 15, feelsLike: 12, conditionLabel: "맑음",
+        weatherIconRaw: WeatherIcon.sun.rawValue,
+        precipitationChance: 10, todayLow: 10, todayHigh: 22,
+        locationName: "서울 강남구", updatedAt: .now
+    ))
+    WeatherEntry(date: .now + 3600, snapshot: WidgetWeatherSnapshot(
+        temperature: 23, feelsLike: 21, conditionLabel: "구름 조금",
+        weatherIconRaw: WeatherIcon.cloudSun.rawValue,
+        precipitationChance: 40, todayLow: 10, todayHigh: 26,
+        locationName: "서울 강남구", updatedAt: .now + 3600
+    ))
+}
+
 #Preview("데이터 없음", as: .systemSmall) {
     NalssiChanggoWidget()
 } timeline: {
