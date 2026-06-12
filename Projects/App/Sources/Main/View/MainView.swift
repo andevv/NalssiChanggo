@@ -6,6 +6,18 @@ import WeatherDomain
 struct MainView: View {
     let viewModel: MainViewModel
 
+    private enum ViewPhase: Equatable {
+        case loading, data, error, denied
+    }
+
+    private var viewPhase: ViewPhase {
+        if viewModel.displayData != nil { return .data }
+        if viewModel.locationManager.authorizationStatus == .denied
+            || viewModel.locationManager.authorizationStatus == .restricted { return .denied }
+        if viewModel.errorMessage != nil { return .error }
+        return .loading
+    }
+
     var body: some View {
         ZStack {
             Color.paper.ignoresSafeArea()
@@ -27,19 +39,24 @@ struct MainView: View {
                     isRefreshEnabled: !viewModel.isCoolingDown,
                     onRefresh: { viewModel.refreshWeather() }
                 )
+                .transition(.opacity)
             } else if viewModel.locationManager.authorizationStatus == .denied
                         || viewModel.locationManager.authorizationStatus == .restricted {
                 // authorizationStatus는 @Observable이므로 init 시점부터 올바른 값을 가짐
                 // → 재실행 후 거부 상태여도 onChange 없이 즉시 이 뷰가 렌더링됨
                 LocationPermissionDeniedView()
+                    .transition(.opacity)
             } else if let errorMessage = viewModel.errorMessage {
                 WeatherErrorView(message: errorMessage) {
                     viewModel.retry()
                 }
+                .transition(.opacity)
             } else {
                 WeatherLoadingView()
+                    .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewPhase)
         // 위치가 갱신될 때마다 날씨를 새로 불러온다
         // 위치 요청 자체는 LocationManager 내부에서 관리 (requestLocation 중복 호출 방지)
         .onChange(of: viewModel.locationManager.locationVersion) { _, _ in
