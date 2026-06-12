@@ -71,7 +71,7 @@ struct WeatherHeroCard: View {
             .ncCardGold()
         }
         .contentShape(Rectangle())
-        .onTapGesture {
+        .bounceTap {
             if data.sourceBreakdown != nil {
                 showBreakdown = true
             }

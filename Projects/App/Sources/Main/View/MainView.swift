@@ -167,6 +167,7 @@ private struct WeatherErrorView: View {
                     .clipShape(Capsule())
                     .overlay(Capsule().strokeBorder(Color.goldEdge, lineWidth: 1))
             }
+            .buttonStyle(.ncBounce)
         }
         .padding(NCSpacing.screenH)
     }
@@ -205,6 +206,7 @@ private struct LocationPermissionDeniedView: View {
                     .clipShape(Capsule())
                     .overlay(Capsule().strokeBorder(Color.goldEdge, lineWidth: 1))
             }
+            .buttonStyle(.ncBounce)
         }
         .padding(NCSpacing.screenH)
     }
