@@ -272,6 +272,7 @@ private struct WeatherWidgetContent: View {
                     .font(NCFont.widgetTemp)           // 48pt Bold
                     .foregroundStyle(snapshot.isStale ? Color.ink4 : Color.ink)
                     .tracking(-2)
+                    .contentTransition(.numericText())
                 Text("°")
                     .font(NCFont.widgetDeg)            // 28pt Medium
                     .foregroundStyle(Color.ink3)
@@ -286,6 +287,7 @@ private struct WeatherWidgetContent: View {
                 .foregroundStyle(Color.ink3)
                 .lineLimit(1)
                 .padding(.top, 2)
+                .contentTransition(.numericText())
 
             Spacer(minLength: 6)
 
@@ -301,8 +303,10 @@ private struct WeatherWidgetContent: View {
                     HStack(spacing: 5) {
                         Text("↓\(low)°")
                             .foregroundStyle(Color.ink4)
+                            .contentTransition(.numericText())
                         Text("↑\(high)°")
                             .foregroundStyle(Color.ink2)
+                            .contentTransition(.numericText())
                     }
                     .font(NCFont.monoBody)             // 11pt Regular
                 }
@@ -315,6 +319,7 @@ private struct WeatherWidgetContent: View {
                             .font(.system(size: 8, weight: .regular))
                         Text("\(snapshot.precipitationChance)%")
                             .font(NCFont.monoBody)
+                            .contentTransition(.numericText())
                     }
                     .foregroundStyle(
                         snapshot.precipitationChance >= 40 ? Color.rain : Color.ink4
