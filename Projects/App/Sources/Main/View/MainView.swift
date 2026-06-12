@@ -80,12 +80,33 @@ private struct WeatherContentView: View {
     let isRefreshEnabled: Bool
     let onRefresh: () -> Void
 
+    @State private var scrollOffset: CGFloat = 0
+    @State private var initialScrollY: CGFloat? = nil
+
+    // 스크롤 20pt 지점부터 60pt 구간에 걸쳐 0→1로 진행
+    private var headerFade: CGFloat {
+        max(0, min(1, (scrollOffset - 20) / 60))
+    }
+
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 0) {
+                // 스크롤 오프셋 앵커: onGeometryChange는 스크롤 중에도 global 위치를 추적
+                Color.clear
+                    .frame(height: 0)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.frame(in: .global).minY
+                    } action: { minY in
+                        if initialScrollY == nil { initialScrollY = minY }
+                        scrollOffset = max(0, (initialScrollY ?? minY) - minY)
+                    }
+
                 VStack(alignment: .leading, spacing: NCSpacing.section) {
                     HeaderSection(data: data)
                         .staggeredAppear(index: 0, triggerID: loadVersion)
+                        .opacity(1 - headerFade)
+                        .scaleEffect(1 - headerFade * 0.06, anchor: .center)
+                        .offset(y: -headerFade * 6)
                     WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
                         .staggeredAppear(index: 1, triggerID: loadVersion)
                     AirRainRow(data: data)
