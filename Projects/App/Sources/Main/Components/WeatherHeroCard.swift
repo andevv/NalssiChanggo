@@ -2,6 +2,7 @@ import SwiftUI
 import DesignSystem
 
 struct WeatherHeroCard: View {
+    @Environment(\.ncFonts) private var fonts
     let data: WeatherDisplayData
     let isRefreshEnabled: Bool
     let onRefresh: () -> Void
@@ -23,12 +24,12 @@ struct WeatherHeroCard: View {
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
                         CountingNumber(
                             value: displayedTemperature,
-                            font: NCFont.heroTemp,
+                            font: fonts.heroTemp,
                             color: Color.ink,
                             tracking: -3
                         )
                         Text("°")
-                            .font(NCFont.heroDeg)
+                            .font(fonts.heroDeg)
                             .foregroundStyle(Color.ink3)
                             .offset(y: -4)
                     }
@@ -43,13 +44,13 @@ struct WeatherHeroCard: View {
                     Text("\(data.condition) · 체감 ")
                     CountingNumber(
                         value: displayedFeelsLike,
-                        font: NCFont.conditionBody,
+                        font: fonts.conditionBody,
                         color: Color.ink2,
                         tracking: 0
                     )
                     Text("°")
                 }
-                .font(NCFont.conditionBody)
+                .font(fonts.conditionBody)
                 .foregroundStyle(Color.ink2)
                 .padding(.top, 4)
 
@@ -60,13 +61,13 @@ struct WeatherHeroCard: View {
 
                     HStack(alignment: .center, spacing: NCSpacing.base) {
                         Text("SOURCE")
-                            .font(NCFont.monoEyebrow)
+                            .font(fonts.monoEyebrow)
                             .foregroundStyle(Color.ink3)
                             .tracking(1)
                             .textCase(.uppercase)
 
                         Text("WeatherKit × 기상청 × OWM")
-                            .font(NCFont.monoEmphasis)
+                            .font(fonts.monoEmphasis)
                             .foregroundStyle(Color.goldDeep)
 
                         Spacer()

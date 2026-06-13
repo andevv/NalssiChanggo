@@ -6,6 +6,7 @@ import DesignSystem
 /// - 기상청: 공공데이터포털 이용약관에 따른 출처 표기
 /// - OpenWeatherMap: 서비스 약관에 따른 출처 표기
 struct AttributionFooter: View {
+    @Environment(\.ncFonts) private var fonts
     let markURL: URL?
     let legalURL: URL?
 
@@ -15,7 +16,7 @@ struct AttributionFooter: View {
 
             VStack(spacing: 10) {
                 Text("WEATHER DATA SOURCE")
-                    .font(NCFont.monoEyebrow)
+                    .font(fonts.monoEyebrow)
                     .foregroundStyle(Color.inkFaint)
                     .tracking(1.4)
                     .textCase(.uppercase)
@@ -29,7 +30,7 @@ struct AttributionFooter: View {
                     // 기상청
                     Link(destination: URL(string: "https://www.weather.go.kr")!) {
                         Text("기상청")
-                            .font(NCFont.labelSmall)
+                            .font(fonts.labelSmall)
                             .foregroundStyle(Color.ink4)
                     }
 
@@ -38,7 +39,7 @@ struct AttributionFooter: View {
                     // OpenWeatherMap
                     Link(destination: URL(string: "https://openweathermap.org")!) {
                         Text("OpenWeatherMap")
-                            .font(NCFont.labelSmall)
+                            .font(fonts.labelSmall)
                             .foregroundStyle(Color.ink4)
                     }
                 }
@@ -80,7 +81,7 @@ struct AttributionFooter: View {
                 .font(.system(size: 9.5, weight: .medium))
                 .foregroundStyle(Color.ink4)
             Text("Weather")
-                .font(NCFont.labelSmall)
+                .font(fonts.labelSmall)
                 .foregroundStyle(Color.ink4)
         }
     }
@@ -89,7 +90,7 @@ struct AttributionFooter: View {
 
     private var dividerDot: some View {
         Text(" · ")
-            .font(NCFont.labelSmall)
+            .font(fonts.labelSmall)
             .foregroundStyle(Color.inkFaint)
     }
 }

@@ -28,20 +28,21 @@ extension View {
 // MARK: - Section Eyebrow
 
 struct NCEyebrow: View {
+    @Environment(\.ncFonts) private var fonts
     let title: String
     var right: String? = nil
 
     var body: some View {
         HStack(alignment: .lastTextBaseline) {
             Text(title)
-                .font(NCFont.monoEyebrow)
+                .font(fonts.monoEyebrow)
                 .foregroundStyle(Color.ink3)
                 .tracking(1.4)
                 .textCase(.uppercase)
             Spacer()
             if let right {
                 Text(right)
-                    .font(NCFont.monoBody)
+                    .font(fonts.monoBody)
                     .foregroundStyle(Color.goldDeep)
             }
         }
@@ -87,6 +88,7 @@ struct AgreementBar: View {
 // MARK: - Air Quality Dial
 
 struct AirDial: View {
+    @Environment(\.ncFonts) private var fonts
     let grade: Int   // 0=좋음 1=보통 2=나쁨 3=매우나쁨 4=위험
     let size: CGFloat
 
@@ -120,7 +122,7 @@ struct AirDial: View {
                 .fill(Color.paper)
                 .padding(4)
             Text("\(grade + 1)")
-                .font(NCFont.monoTiny)
+                .font(fonts.monoTiny)
                 .foregroundStyle(dialColor)
         }
         .frame(width: size, height: size)
@@ -130,12 +132,13 @@ struct AirDial: View {
 // MARK: - Outfit Chip
 
 struct NCChip: View {
+    @Environment(\.ncFonts) private var fonts
     let label: String
     let highlight: Bool
 
     var body: some View {
         Text(label)
-            .font(NCFont.chip)
+            .font(fonts.chip)
             .foregroundStyle(highlight ? Color.goldDeep : Color.ink2)
             .padding(.horizontal, NCSpacing.small)
             .padding(.vertical, 5)

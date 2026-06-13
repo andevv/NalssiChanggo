@@ -36,6 +36,7 @@ struct DailyForecastCard: View {
 // MARK: - 일별 행
 
 private struct DailyRow: View {
+    @Environment(\.ncFonts) private var fonts
     let item: WeatherDisplayData.DailyForecastItem
     let weekLow: Int
     let weekHigh: Int
@@ -52,10 +53,10 @@ private struct DailyRow: View {
             // 요일 + 날짜 (2줄)
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.dayLabel)
-                    .font(item.isToday ? NCFont.labelLarge : .pretendardSemiBold14)
+                    .font(item.isToday ? fonts.labelLarge : fonts.labelLarge)
                     .foregroundStyle(dayLabelColor)
                 Text(item.dateLabel)
-                    .font(NCFont.monoTiny)
+                    .font(fonts.monoTiny)
                     .foregroundStyle(item.isToday ? Color.goldDeep.opacity(0.65) : Color.ink4)
             }
             .frame(width: 44, alignment: .leading)
@@ -71,7 +72,7 @@ private struct DailyRow: View {
 
             // 최저 기온
             Text("\(item.lowTemp)°")
-                .font(NCFont.monoBody)
+                .font(fonts.monoBody)
                 .foregroundStyle(item.isToday ? Color.goldDeep.opacity(0.65) : Color.ink4)
                 .frame(width: 28, alignment: .trailing)
                 .contentTransition(.numericText())
@@ -90,7 +91,7 @@ private struct DailyRow: View {
 
             // 최고 기온
             Text("\(item.highTemp)°")
-                .font(item.isToday ? NCFont.labelLarge : NCFont.monoBody)
+                .font(item.isToday ? fonts.labelLarge : fonts.monoBody)
                 .foregroundStyle(Color.ink)
                 .frame(width: 28, alignment: .trailing)
                 .contentTransition(.numericText())
@@ -122,7 +123,7 @@ private struct DailyRow: View {
                     .font(.system(size: 7))
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.55))
                 Text("\(pct)%")
-                    .font(NCFont.monoTiny)
+                    .font(fonts.monoTiny)
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.65))
                     .contentTransition(.numericText())
                     .animation(.ncNumeric, value: pct)
@@ -136,6 +137,7 @@ private struct DailyRow: View {
 // MARK: - 기온 범위 바 (그라디언트 + 오늘 thumb)
 
 private struct TempRangeBar: View {
+    @Environment(\.ncFonts) private var fonts
     let low: Int
     let high: Int
     let weekLow: Int
@@ -211,7 +213,7 @@ private struct TempRangeBar: View {
             // 오늘 현재 기온 레이블 — thumb 위에 표시 (관측 앙상블값으로 덮어쓰기)
             if let cur = currentTemp {
                 Text("\(cur)°")
-                    .font(NCFont.monoTiny)
+                    .font(fonts.monoTiny)
                     .foregroundStyle(Color.goldDeep)
                     .fixedSize()
                     .contentTransition(.numericText())
@@ -223,12 +225,6 @@ private struct TempRangeBar: View {
             }
         }
     }
-}
-
-// MARK: - Font helper (카드 전용)
-
-private extension Font {
-    static let pretendardSemiBold14: Font = .custom("Pretendard-SemiBold", size: 14, relativeTo: .body)
 }
 
 // MARK: - Preview

@@ -29,15 +29,16 @@ struct HourlyTimelineCard: View {
 // MARK: - 시간별 셀
 
 private struct HourlyCell: View {
+    @Environment(\.ncFonts) private var fonts
     let item: WeatherDisplayData.HourlyItem
 
-    private let cellHeight: CGFloat = 118
+    private let cellHeight: CGFloat = 148
 
     var body: some View {
         VStack(spacing: 0) {
             // 시간 레이블
             Text(item.isNow ? "지금" : item.hourLabel)
-                .font(NCFont.monoSmall)
+                .font(fonts.monoSmall)
                 .foregroundStyle(item.isNow ? Color.goldDeep : Color.ink3)
                 .tracking(0.4)
                 .padding(.bottom, 5)
@@ -50,7 +51,7 @@ private struct HourlyCell: View {
 
             // 기온
             Text("\(item.temperature)°")
-                .font(item.isNow ? NCFont.labelLarge : NCFont.monoBody)
+                .font(item.isNow ? fonts.labelLarge : fonts.monoBody)
                 .foregroundStyle(item.isNow ? Color.ink : Color.ink2)
                 .padding(.bottom, 4)
                 .contentTransition(.numericText())
@@ -61,7 +62,7 @@ private struct HourlyCell: View {
                 .padding(.bottom, 4)
         }
         .frame(width: item.isNow ? 58 : 48, height: cellHeight)
-        .padding(.vertical, 12)
+        .padding(.vertical, 16)
         .padding(.horizontal, 2)
         .background(item.isNow ? Color.goldSoft : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: NCRadius.inner, style: .continuous))
@@ -81,14 +82,14 @@ private struct HourlyCell: View {
                     .font(.system(size: 6.5))
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.65))
                 Text("\(pct)%")
-                    .font(NCFont.monoTiny)
+                    .font(fonts.monoTiny)
                     .foregroundStyle(pct >= 40 ? Color.rain : Color.rain.opacity(0.75))
                     .contentTransition(.numericText())
                     .animation(.ncNumeric, value: pct)
             }
         } else {
             Text("—")
-                .font(NCFont.monoTiny)
+                .font(fonts.monoTiny)
                 .foregroundStyle(Color.inkFaint)
         }
     }
@@ -103,12 +104,13 @@ private struct HourlyCell: View {
 // MARK: - 날짜 구분선
 
 private struct DateSeparatorView: View {
+    @Environment(\.ncFonts) private var fonts
     let label: String
 
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(NCFont.monoTiny)
+                .font(fonts.monoTiny)
                 .foregroundStyle(Color.ink3)
                 .tracking(0.3)
                 .lineLimit(1)
@@ -125,7 +127,7 @@ private struct DateSeparatorView: View {
         .frame(width: 30)
         .padding(.horizontal, 4)
         // 셀과 같은 총 세로 패딩을 맞춰 정렬 유지
-        .padding(.vertical, 12)
+        .padding(.vertical, 16)
     }
 }
 

@@ -47,19 +47,20 @@ private struct OutfitIconBox: View {
 }
 
 private struct OutfitTextBlock: View {
+    @Environment(\.ncFonts) private var fonts
     let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(data.outfitLabel)
-                .font(NCFont.cardTitle)
+                .font(fonts.cardTitle)
                 .foregroundStyle(Color.ink)
                 .tracking(-0.3)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             if !data.outfitSub.isEmpty {
                 Text(data.outfitSub)
-                    .font(NCFont.monoEyebrow)
+                    .font(fonts.monoEyebrow)
                     .foregroundStyle(Color.ink3)
             }
         }

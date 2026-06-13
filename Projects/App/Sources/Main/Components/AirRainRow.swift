@@ -19,6 +19,7 @@ struct AirRainRow: View {
 // MARK: - 대기질 Card
 
 private struct AirCard: View {
+    @Environment(\.ncFonts) private var fonts
     let data: WeatherDisplayData
 
     var body: some View {
@@ -28,12 +29,12 @@ private struct AirCard: View {
                     CardEyebrow("대기질")
                     if data.hasAirData {
                         Text(data.airGrade)
-                            .font(NCFont.cardValue)
+                            .font(fonts.cardValue)
                             .foregroundStyle(data.airGradeColor)
                             .lineLimit(1)
                     } else {
                         Text("--")
-                            .font(NCFont.cardValue)
+                            .font(fonts.cardValue)
                             .foregroundStyle(Color.inkFaint)
                             .lineLimit(1)
                     }
@@ -71,6 +72,7 @@ private struct AirCard: View {
 // MARK: - 강수 Card
 
 private struct RainCard: View {
+    @Environment(\.ncFonts) private var fonts
     let data: WeatherDisplayData
 
     var body: some View {
@@ -79,7 +81,7 @@ private struct RainCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     CardEyebrow("강수")
                     Text(data.rainCondition)
-                        .font(NCFont.cardValue)
+                        .font(fonts.cardValue)
                         .foregroundStyle(data.rainCondition == "강수 없음" ? Color.ink3 : Color.rain)
                         .lineLimit(1)
                 }
@@ -110,7 +112,7 @@ private struct RainCard: View {
                     Spacer()
                     Text(data.hourlyRain.last.map { "\($0.hour)시" } ?? "")
                 }
-                .font(NCFont.monoEyebrow)
+                .font(fonts.monoEyebrow)
                 .foregroundStyle(Color.ink3)
                 .padding(.top, 4)
             }
@@ -146,27 +148,28 @@ private struct HourlyRainBars: View {
 // MARK: - PM Row
 
 private struct PMRow: View {
+    @Environment(\.ncFonts) private var fonts
     let label: String
     let value: Int?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             Text(label)
-                .font(NCFont.monoEyebrow)
+                .font(fonts.monoEyebrow)
                 .foregroundStyle(Color.ink3)
-                .frame(width: 44, alignment: .leading)
+                .frame(width: 52, alignment: .leading)
             if let value {
                 Text("\(value)")
-                    .font(NCFont.monoEmphasis)
+                    .font(fonts.monoEmphasis)
                     .foregroundStyle(Color.ink2)
                     .contentTransition(.numericText())
                     .animation(.ncNumeric, value: value)
                 Text(" μg/m³")
-                    .font(NCFont.labelSmall)
+                    .font(fonts.labelSmall)
                     .foregroundStyle(Color.ink3)
             } else {
                 Text("--")
-                    .font(NCFont.monoEmphasis)
+                    .font(fonts.monoEmphasis)
                     .foregroundStyle(Color.inkFaint)
             }
         }
@@ -176,12 +179,13 @@ private struct PMRow: View {
 // MARK: - Card Eyebrow
 
 private struct CardEyebrow: View {
+    @Environment(\.ncFonts) private var fonts
     let text: String
     init(_ text: String) { self.text = text }
 
     var body: some View {
         Text(text)
-            .font(NCFont.monoEyebrow)
+            .font(fonts.monoEyebrow)
             .foregroundStyle(Color.ink3)
             .tracking(1)
             .textCase(.uppercase)

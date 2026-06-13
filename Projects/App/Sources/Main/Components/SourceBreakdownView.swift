@@ -54,6 +54,7 @@ struct SourceBreakdownView: View {
 // MARK: - Sheet Header
 
 private struct SheetHeader: View {
+    @Environment(\.ncFonts) private var fonts
     let receiptNo: String
     let location: String
     let onDismiss: () -> Void
@@ -61,14 +62,14 @@ private struct SheetHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("SOURCE BREAKDOWN · 소스 비교")
-                .font(NCFont.monoEyebrow)
+                .font(fonts.monoEyebrow)
                 .foregroundStyle(Color.ink3)
                 .tracking(1.2)
                 .textCase(.uppercase)
                 .padding(.top, 2)
 
             Text(location)
-                .font(NCFont.locationTitle)
+                .font(fonts.locationTitle)
                 .foregroundStyle(Color.ink)
                 .tracking(-0.5)
                 .lineLimit(1)
@@ -81,6 +82,7 @@ private struct SheetHeader: View {
 // MARK: - Summary Card
 
 private struct SummaryCard: View {
+    @Environment(\.ncFonts) private var fonts
     let bd: WeatherDisplayData.SourceBreakdownDisplayData
 
     private var agreementColor: Color {
@@ -101,10 +103,10 @@ private struct SummaryCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(bd.agreementLabel)
-                        .font(NCFont.labelLarge)
+                        .font(fonts.labelLarge)
                         .foregroundStyle(Color.ink)
                     Text("AGREE · \(bd.avgAbsDeviationLabel)")
-                        .font(NCFont.monoEyebrow)
+                        .font(fonts.monoEyebrow)
                         .foregroundStyle(Color.ink3)
                         .tracking(1)
                         .textCase(.uppercase)
@@ -113,7 +115,7 @@ private struct SummaryCard: View {
                 Spacer()
 
                 Text("\(bd.agreementPct)%")
-                    .font(.pretendardBold(size: 36))
+                    .font(fonts.displayXL)
                     .foregroundStyle(agreementColor)
                     .tracking(-1)
             }
@@ -133,14 +135,14 @@ private struct SummaryCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
                         Text("\(bd.ensembleTemp)")
-                            .font(NCFont.subTemp)
+                            .font(fonts.subTemp)
                             .foregroundStyle(Color.ink)
                         Text("°  \(bd.ensembleCondition)")
-                            .font(NCFont.conditionBody)
+                            .font(fonts.conditionBody)
                             .foregroundStyle(Color.ink2)
                     }
                     Text("ENSEMBLE · 평균 가중치 적용")
-                        .font(NCFont.monoEyebrow)
+                        .font(fonts.monoEyebrow)
                         .foregroundStyle(Color.ink3)
                         .tracking(1)
                         .textCase(.uppercase)
@@ -181,6 +183,7 @@ private struct SourceListSection: View {
 // MARK: - Source Card
 
 private struct SourceCard: View {
+    @Environment(\.ncFonts) private var fonts
     let source: WeatherDisplayData.SourceBreakdownDisplayData.SourceCard
     let ensembleTemp: Double
     let rangeMin: Double
@@ -204,13 +207,13 @@ private struct SourceCard: View {
                         .fill(initialColor.opacity(0.12))
                         .frame(width: 36, height: 36)
                     Text(source.initial)
-                        .font(NCFont.labelLarge)
+                        .font(fonts.labelLarge)
                         .foregroundStyle(initialColor)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(source.name)
-                        .font(NCFont.labelLarge)
+                        .font(fonts.labelLarge)
                         .foregroundStyle(Color.ink)
                 }
 
@@ -218,7 +221,7 @@ private struct SourceCard: View {
 
                 // 가중치 배지 (KMA 강조)
                 Text(source.weightBadge)
-                    .font(NCFont.monoEmphasis)
+                    .font(fonts.monoEmphasis)
                     .foregroundStyle(source.weightBadge == "× 1.0" ? Color.ink3 : Color.goldDeep)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -240,15 +243,15 @@ private struct SourceCard: View {
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text("\(source.temperature)")
-                        .font(.pretendardBold(size: 28))
+                        .font(fonts.displayLG)
                         .foregroundStyle(Color.ink)
                     Text("°")
-                        .font(NCFont.conditionBody)
+                        .font(fonts.conditionBody)
                         .foregroundStyle(Color.ink3)
                 }
 
                 Text(source.conditionLabel)
-                    .font(NCFont.conditionBody)
+                    .font(fonts.conditionBody)
                     .foregroundStyle(Color.ink2)
                     .padding(.leading, 4)
 
@@ -256,7 +259,7 @@ private struct SourceCard: View {
 
                 // 편차 배지
                 Text(source.deviationLabel)
-                    .font(NCFont.monoEmphasis)
+                    .font(fonts.monoEmphasis)
                     .foregroundStyle(source.deviationPositive ? Color.warn : Color.rain)
                     .monospacedDigit()
             }
@@ -281,6 +284,7 @@ private struct SourceCard: View {
 // MARK: - Temp Range Bar
 
 private struct TempRangeBar: View {
+    @Environment(\.ncFonts) private var fonts
     let sourceTemp: Double
     let ensembleTemp: Double
     let rangeMin: Double
@@ -323,19 +327,19 @@ private struct TempRangeBar: View {
             // 레이블
             HStack {
                 Text("\(Int(rangeMin.rounded()))°")
-                    .font(NCFont.monoSmall)
+                    .font(fonts.monoSmall)
                     .foregroundStyle(Color.inkFaint)
 
                 Spacer()
 
                 Text("앙상블 \(Int(ensembleTemp.rounded()))°")
-                    .font(NCFont.monoSmall)
+                    .font(fonts.monoSmall)
                     .foregroundStyle(Color.ink3)
 
                 Spacer()
 
                 Text("\(Int(rangeMax.rounded()))°")
-                    .font(NCFont.monoSmall)
+                    .font(fonts.monoSmall)
                     .foregroundStyle(Color.inkFaint)
             }
         }
@@ -345,11 +349,12 @@ private struct TempRangeBar: View {
 // MARK: - Comment Block
 
 private struct CommentBlock: View {
+    @Environment(\.ncFonts) private var fonts
     let text: String
 
     var body: some View {
         Text(text)
-            .font(NCFont.accent)
+            .font(fonts.accent)
             .foregroundStyle(Color.ink2)
             .padding(NCSpacing.cardInner)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -365,6 +370,7 @@ private struct CommentBlock: View {
 // MARK: - Updated Footer
 
 private struct UpdatedFooter: View {
+    @Environment(\.ncFonts) private var fonts
     let label: String
     let isRefreshEnabled: Bool
     let cooldownHintLabel: String?
@@ -376,7 +382,7 @@ private struct UpdatedFooter: View {
         VStack(alignment: .trailing, spacing: 6) {
             HStack {
                 Text("UPDATED · \(label)")
-                    .font(NCFont.monoEyebrow)
+                    .font(fonts.monoEyebrow)
                     .foregroundStyle(Color.ink3)
                     .tracking(1)
                     .textCase(.uppercase)
@@ -398,7 +404,7 @@ private struct UpdatedFooter: View {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 10, weight: .medium))
                         Text("새로고침")
-                            .font(NCFont.monoEyebrow)
+                            .font(fonts.monoEyebrow)
                             .tracking(0.5)
                     }
                     .foregroundStyle(isRefreshEnabled ? Color.goldDeep : Color.ink4)
@@ -407,19 +413,11 @@ private struct UpdatedFooter: View {
 
             if showHint, let hint = cooldownHintLabel {
                 Text(hint)
-                    .font(NCFont.monoTiny)
+                    .font(fonts.monoTiny)
                     .foregroundStyle(Color.ink3)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-    }
-}
-
-// MARK: - Font helper (local)
-
-private extension Font {
-    static func pretendardBold(size: CGFloat) -> Font {
-        .custom("Pretendard-Bold", size: size, relativeTo: .body)
     }
 }
 
