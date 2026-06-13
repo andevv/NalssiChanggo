@@ -4,7 +4,7 @@
 
 Apple WeatherKit · OpenWeatherMap API · 한국 기상청 API 세 소스를 앙상블·집계하여 최종 날씨 값을 제공하는 iOS 날씨 앱.
 
-- **플랫폼**: iOS 17+, iPhone 전용, Portrait 고정, 라이트 모드 고정
+- **플랫폼**: iOS 17+, iPhone · iPad 지원, Portrait 고정, 라이트 모드 고정
 - **UI**: SwiftUI + `@Observable`
 - **빌드**: Tuist / 번들 ID `com.andev.nalssichanggo`
 
@@ -63,7 +63,7 @@ Projects/DesignSystem/
 ├── Sources/
 │   ├── Foundation/
 │   │   ├── Color+Token.swift   # Color.ink, Color.gold 등 20개 토큰
-│   │   ├── Typography.swift    # NCFont.* 토큰
+│   │   ├── Typography.swift    # NCFontSet(phone/pad), ncFonts 환경 키, NCFont.* 레거시 토큰
 │   │   ├── Spacing.swift       # NCSpacing.*, NCRadius.*
 │   │   └── FontRegistrar.swift # 폰트 프로세스 등록
 │   └── Icons/
@@ -77,9 +77,28 @@ Projects/DesignSystem/
 ### 사용 규칙
 
 - 색상은 반드시 `Color.ink`, `Color.gold` 등 **토큰**을 사용한다. 16진수 직접 사용 금지.
-- 폰트는 반드시 `NCFont.heroTemp`, `NCFont.monoEyebrow` 등 **토큰**을 사용한다. `.custom("Pretendard-Bold", size: ...)` 직접 사용 금지.
-- 간격·반경은 `NCSpacing.*`, `NCRadius.*`를 우선 사용한다.
+- **앱 컴포넌트 뷰** 폰트는 `@Environment(\.ncFonts) var fonts`로 읽어 `fonts.heroTemp` 등을 사용한다. `NCFont.*` 직접 참조 금지.
+- **위젯 Extension** 폰트는 SwiftUI 환경 주입이 불가하므로 `NCFont.*` static 토큰을 직접 사용한다.
+- `.custom("Pretendard-Bold", size: ...)` 직접 사용 금지. `relativeTo:` 방식도 금지 (fixedSize 전용).
+- 간격·반경은 `NCSpacing.*`, `NCRadius.*`를 우선 사용한다. iPad 전용 여백은 `NCSpacing.screenH_pad`, 컬럼 간격은 `NCSpacing.columnGap`.
 - 아이콘은 `WeatherIconView(.sun, size:)` / `OutfitIconView(.umbrella, size:)`로 사용한다.
+
+### 폰트 시스템 (NCFontSet)
+
+`NCFontSet`은 iPhone·iPad 각각의 고정 크기 폰트 컬렉션이다. 모든 폰트는 `fixedSize`로 정의되어 Dynamic Type에 반응하지 않는다.
+
+```swift
+// WeatherContentView에서 주입
+.environment(\.ncFonts, sizeClass == .regular ? .pad : .phone)
+
+// 컴포넌트 뷰에서 사용
+@Environment(\.ncFonts) private var fonts
+Text("...").font(fonts.cardValue)
+```
+
+- `NCFontSet.phone` — iPhone 기준 크기
+- `NCFontSet.pad` — phone 대비 약 1.25× 크기 (iPad)
+- 환경 기본값은 `.phone`이므로 Preview·위젯 등 주입 없는 컨텍스트에서도 동작한다.
 
 ### 폰트 등록
 
@@ -112,6 +131,8 @@ Entitlements는 `Project.swift` `.entitlements(.dictionary([...]))` 블록에서
 
 - 타겟: `NalssiChanggoWidget` / 소스: `Projects/Widget/Sources/`
 - App과 데이터 공유: App Groups → `UserDefaults(suiteName: "group.com.andev.nalssichanggo")`
+- 지원 패밀리: `.systemSmall` (현재 날씨), `.systemMedium` (현재 날씨 + 시간별 예보 5셀)
+- `@Environment(\.widgetFamily)`로 `WeatherWidgetContent` / `MediumWidgetContent` 분기
 
 ### 타임라인 전략
 
@@ -230,10 +251,25 @@ Components/
   AirRainRow.swift        # 대기질 카드 + 강수 카드 (가로 2분할)
   OutfitCard.swift        # 옷차림 추천
   HourlyTimelineCard.swift # 시간별 예보 (가로 스크롤)
+  DailyForecastCard.swift # 일별 예보 (7일)
 Model/
   WeatherDisplayData.swift # WeatherSummary → View용 표시 데이터 매핑 (SourceBreakdownDisplayData 포함)
   OutfitRecommender.swift  # 체감 온도·강수 확률 기반 옷차림 추천
 ```
+
+### iPhone / iPad 레이아웃 분기
+
+`WeatherContentView`가 `@Environment(\.horizontalSizeClass)`로 분기한다.
+
+| 디바이스 | 레이아웃 | ncFonts 주입 |
+|---------|---------|------------|
+| iPhone (compact) | 단일 컬럼 VStack | `.phone` |
+| iPad (regular) | 두 컬럼 HStack | `.pad` |
+
+**iPad 두 컬럼 구성**
+- 왼쪽: WeatherHeroCard → HourlyTimelineCard
+- 오른쪽: AirRainRow → OutfitCard → DailyForecastCard
+- 좌우 여백 `NCSpacing.screenH_pad(32pt)`, 컬럼 간격 `NCSpacing.columnGap(16pt)`
 
 ### WeatherDisplayData 주요 로직
 

@@ -3,7 +3,7 @@
 > **기상청 · Apple WeatherKit · OpenWeatherMap**, 세 소스의 앙상블로 더 신뢰할 수 있는 날씨를 제공하는 iOS 날씨 앱
 
 <p align="left">
-  <img src="https://img.shields.io/badge/iOS-17.0+-black?logo=apple" />
+  <img src="https://img.shields.io/badge/iOS%20%7C%20iPadOS-17.0+-black?logo=apple" />
   <img src="https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white" />
   <img src="https://img.shields.io/badge/SwiftUI-%40Observable-0070C9?logo=swift&logoColor=white" />
   <img src="https://img.shields.io/badge/Tuist-Project_Management-6236FF" />
@@ -46,7 +46,7 @@
 ### 부가 기능
 - **옷차림 추천** — 체감온도 + 강수 확률 기반 아이콘 조합 추천
 - **대기질 카드** — 에어코리아 기반 미세먼지 등급 표시
-- **홈 화면 위젯** — App Groups를 통해 앱 데이터 공유
+- **홈 화면 위젯** — 소형(현재 날씨) · 중형(시간별 예보 포함), App Groups 데이터 공유
 - **새로고침 쿨다운** — 과도한 API 호출 방지 (10분)
 
 ---
@@ -315,9 +315,10 @@ enum Secrets {
 
 - [ ] **Android 버전** — Kotlin + Jetpack Compose로 동일 앙상블 로직 포팅 예정
 - [ ] 초단기예보 API (`getUltraSrtFcst`) 연동 — 운영 전환 후 SKY 정확도 개선
-- [ ] iPadOS 지원
+- [x] iPadOS 지원 — 두 컬럼 레이아웃, Portrait 전용
 - [ ] 다크 모드 지원
-- [ ] 위젯 다양화 (소형·중형·잠금 화면)
+- [x] 위젯 중형 (시간별 예보 포함)
+- [ ] 위젯 잠금 화면
 - [ ] 알림 기능 — 강수 시작 전 Push 알림
 
 ---
