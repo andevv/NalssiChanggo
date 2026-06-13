@@ -2,67 +2,146 @@ import SwiftUI
 
 // 앱 시작 시 FontRegistrar.register() 를 호출해야 폰트가 활성화됩니다.
 
+// MARK: - NCFontSet
+
+/// 디바이스별 명시적 고정 크기 폰트 컬렉션.
+/// WeatherContentView 가 iPhone → `.phone` / iPad → `.pad` 를 Environment에 주입한다.
+/// 컴포넌트 뷰는 `@Environment(\.ncFonts) var fonts` 로 읽는다.
+public struct NCFontSet {
+
+    // Pretendard — Display
+    public let heroTemp: Font
+    public let heroDeg: Font
+    public let subTemp: Font
+    public let locationTitle: Font
+    /// 소스 비교 일치도 수치 등 대형 표시 (36 / 44pt)
+    public let displayXL: Font
+    /// 소스별 기온 등 중대형 표시 (28 / 35pt)
+    public let displayLG: Font
+
+    // Pretendard — UI
+    public let cardValue: Font
+    public let conditionBody: Font
+    public let cardTitle: Font
+    public let labelLarge: Font
+    public let chip: Font
+    public let labelSmall: Font
+    public let labelTiny: Font
+
+    // IBM Plex Mono
+    public let monoEmphasis: Font
+    public let monoBody: Font
+    public let monoEyebrow: Font
+    public let monoSmall: Font
+    public let monoTiny: Font
+
+    // Caveat
+    public let accent: Font
+}
+
+extension NCFontSet {
+
+    /// iPhone 세트 — 기존 대비 소폭 확대, 모두 fixedSize (Dynamic Type 미반응)
+    public static let phone = NCFontSet(
+        heroTemp:      .pretendardFixed(96,   .bold),
+        heroDeg:       .pretendardFixed(60,   .medium),
+        subTemp:       .pretendardFixed(30,   .bold),
+        locationTitle: .pretendardFixed(34,   .bold),
+        displayXL:     .pretendardFixed(36,   .bold),
+        displayLG:     .pretendardFixed(28,   .bold),
+        cardValue:     .pretendardFixed(27,   .bold),
+        conditionBody: .pretendardFixed(18,   .medium),
+        cardTitle:     .pretendardFixed(19,   .semibold),
+        labelLarge:    .pretendardFixed(15,   .semibold),
+        chip:          .pretendardFixed(13,   .medium),
+        labelSmall:    .pretendardFixed(12,   .regular),
+        labelTiny:     .pretendardFixed(10,   .regular),
+        monoEmphasis:  .ibmPlexMonoFixed(13,  .medium),
+        monoBody:      .ibmPlexMonoFixed(12,  .regular),
+        monoEyebrow:   .ibmPlexMonoFixed(11,  .regular),
+        monoSmall:     .ibmPlexMonoFixed(11,  .regular),
+        monoTiny:      .ibmPlexMonoFixed(10,  .medium),
+        accent:        .caveatFixed(15,       .medium)
+    )
+
+    /// iPad 세트 — phone 대비 약 1.25×, fixedSize
+    public static let pad = NCFontSet(
+        heroTemp:      .pretendardFixed(120,  .bold),
+        heroDeg:       .pretendardFixed(75,   .medium),
+        subTemp:       .pretendardFixed(38,   .bold),
+        locationTitle: .pretendardFixed(42,   .bold),
+        displayXL:     .pretendardFixed(44,   .bold),
+        displayLG:     .pretendardFixed(35,   .bold),
+        cardValue:     .pretendardFixed(30,   .bold),
+        conditionBody: .pretendardFixed(22,   .medium),
+        cardTitle:     .pretendardFixed(24,   .semibold),
+        labelLarge:    .pretendardFixed(16,   .semibold),
+        chip:          .pretendardFixed(16,   .medium),
+        labelSmall:    .pretendardFixed(15,   .regular),
+        labelTiny:     .pretendardFixed(12,   .regular),
+        monoEmphasis:  .ibmPlexMonoFixed(16,  .medium),
+        monoBody:      .ibmPlexMonoFixed(15,  .regular),
+        monoEyebrow:   .ibmPlexMonoFixed(14,  .regular),
+        monoSmall:     .ibmPlexMonoFixed(14,  .regular),
+        monoTiny:      .ibmPlexMonoFixed(12,  .medium),
+        accent:        .caveatFixed(19,       .medium)
+    )
+}
+
+// MARK: - Environment Key
+
+private struct NCFontSetKey: EnvironmentKey {
+    static let defaultValue: NCFontSet = .phone
+}
+
+public extension EnvironmentValues {
+    var ncFonts: NCFontSet {
+        get { self[NCFontSetKey.self] }
+        set { self[NCFontSetKey.self] = newValue }
+    }
+}
+
+// MARK: - NCFont (위젯 및 레거시 호환용 static 토큰)
+
+// 앱 컴포넌트 뷰는 @Environment(\.ncFonts) 를 사용한다.
+// 위젯 Extension 은 WidgetKit 프로세스에서 실행되므로 이 static 토큰을 직접 참조한다.
 public enum NCFont {
 
     // MARK: - 기온 표시 (Pretendard)
-
-    /// 메인 기온 — 92pt Bold
-    public static let heroTemp: Font      = .pretendard(size: 92, weight: .bold)
-    /// 도(°) 기호 — 56pt Medium
-    public static let heroDeg: Font       = .pretendard(size: 56, weight: .medium)
-    /// 서브 기온 — 28pt Bold
-    public static let subTemp: Font       = .pretendard(size: 28, weight: .bold)
+    public static let heroTemp: Font      = NCFontSet.phone.heroTemp
+    public static let heroDeg: Font       = NCFontSet.phone.heroDeg
+    public static let subTemp: Font       = NCFontSet.phone.subTemp
 
     // MARK: - UI 텍스트 (Pretendard)
-
-    /// 지역명 — 32pt Bold
-    public static let locationTitle: Font = .pretendard(size: 32, weight: .bold)
-    /// 카드 큰 값 (좋음, 오후 비 등) — 26pt Bold
-    public static let cardValue: Font     = .pretendard(size: 26, weight: .bold)
-    /// 날씨 상태 본문 — 17pt Medium
-    public static let conditionBody: Font = .pretendard(size: 17, weight: .medium)
-    /// 섹션/카드 타이틀 — 18pt SemiBold
-    public static let cardTitle: Font     = .pretendard(size: 18, weight: .semibold)
-    /// 보조 레이블 — 14pt SemiBold
-    public static let labelLarge: Font    = .pretendard(size: 14, weight: .semibold)
-    /// 칩 텍스트 — 12pt Medium
-    public static let chip: Font          = .pretendard(size: 12, weight: .medium)
-    /// 카드 소형 레이블 — 11pt Regular
-    public static let labelSmall: Font    = .pretendard(size: 11, weight: .regular)
-    /// 미세 레이블 — 9pt Regular
-    public static let labelTiny: Font     = .pretendard(size: 9,  weight: .regular)
+    public static let locationTitle: Font = NCFontSet.phone.locationTitle
+    public static let cardValue: Font     = NCFontSet.phone.cardValue
+    public static let conditionBody: Font = NCFontSet.phone.conditionBody
+    public static let cardTitle: Font     = NCFontSet.phone.cardTitle
+    public static let labelLarge: Font    = NCFontSet.phone.labelLarge
+    public static let chip: Font          = NCFontSet.phone.chip
+    public static let labelSmall: Font    = NCFontSet.phone.labelSmall
+    public static let labelTiny: Font     = NCFontSet.phone.labelTiny
 
     // MARK: - 수치 / 모노 (IBM Plex Mono)
+    public static let monoEmphasis: Font  = NCFontSet.phone.monoEmphasis
+    public static let monoBody: Font      = NCFontSet.phone.monoBody
+    public static let monoEyebrow: Font   = NCFontSet.phone.monoEyebrow
+    public static let monoSmall: Font     = NCFontSet.phone.monoSmall
+    public static let monoTiny: Font      = NCFontSet.phone.monoTiny
 
-    /// 어그리먼트 퍼센트 — 12pt Medium
-    public static let monoEmphasis: Font  = .ibmPlexMono(size: 12, weight: .medium)
-    /// 수치 본문 — 11pt Regular
-    public static let monoBody: Font      = .ibmPlexMono(size: 11, weight: .regular)
-    /// 섹션 아이브로우 — 10.5pt Regular (+ tracking 1.4 별도 적용)
-    public static let monoEyebrow: Font   = .ibmPlexMono(size: 10.5, weight: .regular)
-    /// 소형 수치 — 10pt Regular
-    public static let monoSmall: Font     = .ibmPlexMono(size: 10, weight: .regular)
-    /// 극소형 — 9pt Medium
-    public static let monoTiny: Font      = .ibmPlexMono(size: 9, weight: .medium)
-
-    // MARK: - 위젯 전용 (systemSmall 기온 표시용)
-
-    /// 위젯 메인 기온 — 48pt Bold
-    public static let widgetTemp: Font = .pretendard(size: 48, weight: .bold)
-    /// 위젯 도(°) 기호 — 28pt Medium
-    public static let widgetDeg: Font  = .pretendard(size: 28, weight: .medium)
+    // MARK: - 위젯 전용 (systemSmall 기온 표시용 — 별도 크기 유지)
+    public static let widgetTemp: Font = .pretendardFixed(48, .bold)
+    public static let widgetDeg: Font  = .pretendardFixed(28, .medium)
 
     // MARK: - 손글씨 액센트 (Caveat)
-
-    /// 손글씨 액센트 — 14pt Medium
-    public static let accent: Font        = .caveat(size: 14, weight: .medium)
+    public static let accent: Font     = NCFontSet.phone.accent
 }
 
-// MARK: - Font Helpers
+// MARK: - Font Helpers (DesignSystem internal)
 
-private extension Font {
+extension Font {
 
-    static func pretendard(size: CGFloat, weight: Font.Weight) -> Font {
+    static func pretendardFixed(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let name: String
         switch weight {
         case .bold:     name = "Pretendard-Bold"
@@ -70,16 +149,16 @@ private extension Font {
         case .medium:   name = "Pretendard-Medium"
         default:        name = "Pretendard-Regular"
         }
-        return .custom(name, size: size, relativeTo: .body)
+        return .custom(name, fixedSize: size)
     }
 
-    static func ibmPlexMono(size: CGFloat, weight: Font.Weight) -> Font {
+    static func ibmPlexMonoFixed(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let name = weight == .medium ? "IBMPlexMono-Medium" : "IBMPlexMono-Regular"
-        return .custom(name, size: size, relativeTo: .body)
+        return .custom(name, fixedSize: size)
     }
 
-    static func caveat(size: CGFloat, weight: Font.Weight) -> Font {
+    static func caveatFixed(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let name = weight == .medium ? "Caveat-Medium" : "Caveat-Regular"
-        return .custom(name, size: size, relativeTo: .body)
+        return .custom(name, fixedSize: size)
     }
 }

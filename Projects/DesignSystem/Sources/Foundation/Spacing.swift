@@ -9,8 +9,12 @@ public enum NCSpacing {
     public static let cardInner: CGFloat = 16
     /// 섹션 간 세로 간격 (18pt)
     public static let section: CGFloat   = 18
-    /// 화면 좌우 여백 (20pt)
+    /// 화면 좌우 여백 — iPhone (20pt)
     public static let screenH: CGFloat   = 20
+    /// 화면 좌우 여백 — iPad regular (32pt)
+    public static let screenH_pad: CGFloat = 32
+    /// iPad 두 컬럼 사이 가로 간격 (16pt)
+    public static let columnGap: CGFloat = 16
     /// 중형 간격 (24pt)
     public static let medium: CGFloat    = 24
     /// 대형 간격 (28pt)
