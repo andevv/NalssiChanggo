@@ -32,7 +32,7 @@ struct NalssiChanggoWidget: Widget {
         }
         .configurationDisplayName("날씨창고")
         .description("오늘의 날씨를 홈 화면에서 확인하세요.")
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
@@ -217,12 +217,18 @@ private func mapWeatherIcon(state: WeatherState, isDaytime: Bool) -> WeatherIcon
 // MARK: - Root Entry View
 
 struct NalssiChanggoWidgetEntryView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: WeatherEntry
 
     var body: some View {
         Group {
             if let snapshot = entry.snapshot {
-                WeatherWidgetContent(snapshot: snapshot)
+                switch family {
+                case .systemMedium:
+                    MediumWidgetContent(snapshot: snapshot)
+                default:
+                    WeatherWidgetContent(snapshot: snapshot)
+                }
             } else {
                 EmptyWidgetView()
             }
@@ -337,6 +343,159 @@ private struct WeatherWidgetContent: View {
             .padding(.top, 3)
         }
         .containerBackground(Color.paper, for: .widget)
+    }
+}
+
+// MARK: - Medium Widget Content
+
+private struct MediumWidgetContent: View {
+    let snapshot: WidgetWeatherSnapshot
+
+    private var icon: WeatherIcon {
+        WeatherIcon(rawValue: snapshot.weatherIconRaw) ?? .cloudSun
+    }
+
+    private var updatedLabel: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "HH:mm 기준"
+        return formatter.string(from: snapshot.updatedAt)
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 왼쪽: 현재 날씨 (small 동일 구조)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .center, spacing: 0) {
+                    Text(snapshot.locationName)
+                        .font(NCFont.labelSmall)
+                        .foregroundStyle(Color.ink3)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: 4)
+                    WeatherIconView(icon, size: 26)
+                        .foregroundStyle(snapshot.isStale ? Color.inkFaint : Color.goldDeep)
+                }
+
+                Spacer(minLength: 4)
+
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text("\(snapshot.temperature)")
+                        .font(NCFont.widgetTemp)
+                        .foregroundStyle(snapshot.isStale ? Color.ink4 : Color.ink)
+                        .tracking(-2)
+                        .contentTransition(.numericText())
+                    Text("°")
+                        .font(NCFont.widgetDeg)
+                        .foregroundStyle(Color.ink3)
+                        .offset(y: -2)
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+                Text("\(snapshot.conditionLabel) · 체감 \(snapshot.feelsLike)°")
+                    .font(NCFont.chip)
+                    .foregroundStyle(Color.ink3)
+                    .lineLimit(1)
+                    .padding(.top, 2)
+                    .contentTransition(.numericText())
+
+                Spacer(minLength: 6)
+
+                Rectangle()
+                    .fill(Color.hairline)
+                    .frame(height: 0.5)
+                    .padding(.bottom, 6)
+
+                HStack(alignment: .center, spacing: 0) {
+                    if let low = snapshot.todayLow, let high = snapshot.todayHigh {
+                        HStack(spacing: 5) {
+                            Text("↓\(low)°").foregroundStyle(Color.ink4).contentTransition(.numericText())
+                            Text("↑\(high)°").foregroundStyle(Color.ink2).contentTransition(.numericText())
+                        }
+                        .font(NCFont.monoBody)
+                    }
+                    Spacer(minLength: 0)
+                    if snapshot.precipitationChance >= 10 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "drop.fill").font(.system(size: 8, weight: .regular))
+                            Text("\(snapshot.precipitationChance)%").font(NCFont.monoBody).contentTransition(.numericText())
+                        }
+                        .foregroundStyle(snapshot.precipitationChance >= 40 ? Color.rain : Color.ink4)
+                    }
+                }
+
+                HStack {
+                    Spacer()
+                    Text(updatedLabel)
+                        .font(NCFont.monoTiny)
+                        .foregroundStyle(snapshot.isStale ? Color.warn : Color.inkFaint)
+                }
+                .padding(.top, 3)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            // 구분선
+            Rectangle()
+                .fill(Color.hairline)
+                .frame(width: 0.5)
+                .padding(.vertical, 8)
+
+            // 오른쪽: 시간별 예보 5셀
+            HStack(alignment: .center, spacing: 0) {
+                ForEach(Array(snapshot.hourlyForecasts.prefix(5).enumerated()), id: \.offset) { _, hourly in
+                    HourlyMiniCell(hourly: hourly)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 10)
+        }
+        .containerBackground(Color.paper, for: .widget)
+    }
+}
+
+// MARK: - Hourly Mini Cell (medium 위젯 전용)
+
+private struct HourlyMiniCell: View {
+    let hourly: HourlyWidgetSnapshot
+
+    private var icon: WeatherIcon {
+        WeatherIcon(rawValue: hourly.weatherIconRaw) ?? .cloudSun
+    }
+
+    private var hourLabel: String {
+        let hour = Calendar.current.component(.hour, from: hourly.date)
+        return "\(hour)시"
+    }
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(hourLabel)
+                .font(NCFont.monoTiny)
+                .foregroundStyle(Color.ink3)
+
+            WeatherIconView(icon, size: 16)
+                .foregroundStyle(Color.ink3)
+
+            Text("\(hourly.temperature)°")
+                .font(NCFont.monoBody)
+                .foregroundStyle(Color.ink2)
+                .contentTransition(.numericText())
+
+            if hourly.precipitationChance >= 10 {
+                Text("\(hourly.precipitationChance)%")
+                    .font(NCFont.monoTiny)
+                    .foregroundStyle(hourly.precipitationChance >= 40 ? Color.rain : Color.rain.opacity(0.65))
+                    .contentTransition(.numericText())
+            } else {
+                Text("—")
+                    .font(NCFont.monoTiny)
+                    .foregroundStyle(Color.inkFaint)
+            }
+        }
     }
 }
 
@@ -526,6 +685,12 @@ private extension WidgetWeatherSnapshot {
 // MARK: - Previews
 
 #Preview("날씨 있음", as: .systemSmall) {
+    NalssiChanggoWidget()
+} timeline: {
+    WeatherEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview("미디엄 — 날씨 있음", as: .systemMedium) {
     NalssiChanggoWidget()
 } timeline: {
     WeatherEntry(date: .now, snapshot: .placeholder)
