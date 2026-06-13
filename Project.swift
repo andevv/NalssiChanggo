@@ -12,7 +12,7 @@ let project = Project(
 
         .target(
             name: "NalssiChanggo",
-            destinations: [.iPhone],
+            destinations: [.iPhone, .iPad],
             product: .app,
             bundleId: "com.andev.nalssichanggo",
             deploymentTargets: .iOS("17.0"),
@@ -28,6 +28,7 @@ let project = Project(
                         "UIImageName": "",
                     ],
                     "UISupportedInterfaceOrientations": ["UIInterfaceOrientationPortrait"],
+                    "UISupportedInterfaceOrientations~ipad": ["UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown"],
                     "UIUserInterfaceStyle": "Light",
                     // Location
                     "NSLocationWhenInUseUsageDescription": "날씨 정보를 제공하기 위해 현재 위치를 사용합니다.",

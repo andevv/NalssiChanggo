@@ -80,12 +80,17 @@ private struct WeatherContentView: View {
     let isRefreshEnabled: Bool
     let onRefresh: () -> Void
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var scrollOffset: CGFloat = 0
     @State private var initialScrollY: CGFloat? = nil
 
     // 스크롤 20pt 지점부터 60pt 구간에 걸쳐 0→1로 진행
     private var headerFade: CGFloat {
         max(0, min(1, (scrollOffset - 20) / 60))
+    }
+
+    private var hPad: CGFloat {
+        sizeClass == .regular ? NCSpacing.screenH_pad : NCSpacing.screenH
     }
 
     var body: some View {
@@ -101,50 +106,102 @@ private struct WeatherContentView: View {
                         scrollOffset = max(0, (initialScrollY ?? minY) - minY)
                     }
 
-                VStack(alignment: .leading, spacing: NCSpacing.section) {
-                    HeaderSection(data: data)
-                        .staggeredAppear(index: 0, triggerID: loadVersion)
-                        .opacity(1 - headerFade)
-                        .scaleEffect(1 - headerFade * 0.06, anchor: .center)
-                        .offset(y: -headerFade * 6)
-                    WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
-                        .staggeredAppear(index: 1, triggerID: loadVersion)
-                    AirRainRow(data: data)
-                        .staggeredAppear(index: 2, triggerID: loadVersion)
-                    OutfitCard(data: data)
-                        .staggeredAppear(index: 3, triggerID: loadVersion)
-                    HourlyTimelineCard(data: data)
-                        .staggeredAppear(index: 4, triggerID: loadVersion)
-                    DailyForecastCard(data: data)
-                        .staggeredAppear(index: 5, triggerID: loadVersion)
+                if sizeClass == .regular {
+                    iPadLayout
+                        .environment(\.ncFonts, .pad)
+                } else {
+                    iPhoneLayout
+                        .environment(\.ncFonts, .phone)
                 }
-                .padding(.horizontal, NCSpacing.screenH)
-                .padding(.top, NCSpacing.base)
-                .padding(.bottom, NCSpacing.medium)
 
                 AttributionFooter(markURL: attributionMarkURL, legalURL: attributionLegalURL)
-                    .padding(.horizontal, NCSpacing.screenH)
+                    .padding(.horizontal, hPad)
             }
         }
+    }
+
+    // MARK: - iPhone: 단일 컬럼
+
+    @ViewBuilder
+    private var iPhoneLayout: some View {
+        VStack(alignment: .leading, spacing: NCSpacing.section) {
+            HeaderSection(data: data)
+                .staggeredAppear(index: 0, triggerID: loadVersion)
+                .opacity(1 - headerFade)
+                .scaleEffect(1 - headerFade * 0.06, anchor: .center)
+                .offset(y: -headerFade * 6)
+            WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
+                .staggeredAppear(index: 1, triggerID: loadVersion)
+            AirRainRow(data: data)
+                .staggeredAppear(index: 2, triggerID: loadVersion)
+            OutfitCard(data: data)
+                .staggeredAppear(index: 3, triggerID: loadVersion)
+            HourlyTimelineCard(data: data)
+                .staggeredAppear(index: 4, triggerID: loadVersion)
+            DailyForecastCard(data: data)
+                .staggeredAppear(index: 5, triggerID: loadVersion)
+        }
+        .padding(.horizontal, NCSpacing.screenH)
+        .padding(.top, NCSpacing.base)
+        .padding(.bottom, NCSpacing.medium)
+    }
+
+    // MARK: - iPad: 두 컬럼
+
+    @ViewBuilder
+    private var iPadLayout: some View {
+        VStack(alignment: .leading, spacing: NCSpacing.section) {
+            HeaderSection(data: data)
+                .staggeredAppear(index: 0, triggerID: loadVersion)
+                .opacity(1 - headerFade)
+                .scaleEffect(1 - headerFade * 0.06, anchor: .center)
+                .offset(y: -headerFade * 6)
+
+            HStack(alignment: .top, spacing: NCSpacing.columnGap) {
+                // 왼쪽: 현재 날씨 + 시간별 예보
+                VStack(spacing: NCSpacing.section) {
+                    WeatherHeroCard(data: data, isRefreshEnabled: isRefreshEnabled, onRefresh: onRefresh)
+                        .staggeredAppear(index: 1, triggerID: loadVersion)
+                    HourlyTimelineCard(data: data)
+                        .staggeredAppear(index: 2, triggerID: loadVersion)
+                }
+                .frame(maxWidth: .infinity)
+
+                // 오른쪽: 대기·강수 + 옷차림 + 일별 예보
+                VStack(spacing: NCSpacing.section) {
+                    AirRainRow(data: data)
+                        .staggeredAppear(index: 1, triggerID: loadVersion)
+                    OutfitCard(data: data)
+                        .staggeredAppear(index: 2, triggerID: loadVersion)
+                    DailyForecastCard(data: data)
+                        .staggeredAppear(index: 3, triggerID: loadVersion)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, NCSpacing.screenH_pad)
+        .padding(.top, NCSpacing.base)
+        .padding(.bottom, NCSpacing.medium)
     }
 }
 
 // MARK: - 헤더
 
 private struct HeaderSection: View {
+    @Environment(\.ncFonts) private var fonts
     let data: WeatherDisplayData
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("날씨창고")
-                    .font(NCFont.monoEyebrow)
+                    .font(fonts.monoEyebrow)
                     .foregroundStyle(Color.ink3)
                     .tracking(1.4)
                     .textCase(.uppercase)
                 Spacer()
                 Text(data.receiptNo)
-                    .font(NCFont.monoEyebrow)
+                    .font(fonts.monoEyebrow)
                     .foregroundStyle(Color.ink3)
                     .tracking(1.4)
                     .textCase(.uppercase)
@@ -152,13 +209,13 @@ private struct HeaderSection: View {
 
             HStack(alignment: .lastTextBaseline, spacing: NCSpacing.small) {
                 Text(data.location)
-                    .font(NCFont.locationTitle)
+                    .font(fonts.locationTitle)
                     .foregroundStyle(Color.ink)
                     .tracking(-0.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(data.dateLabel)
-                    .font(NCFont.monoBody)
+                    .font(fonts.monoBody)
                     .foregroundStyle(Color.ink3)
                     .tracking(0.5)
             }
