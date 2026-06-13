@@ -78,7 +78,7 @@ let project = Project(
                 base: [
                     "DEVELOPMENT_TEAM": devTeam,
                     "CODE_SIGN_STYLE": "Automatic",
-                    "MARKETING_VERSION": "1.3.0",
+                    "MARKETING_VERSION": "1.4.0",
                     "CURRENT_PROJECT_VERSION": "1",
                     "INFOPLIST_KEY_CFBundleDisplayName": "날씨창고",
                     "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.weather",
@@ -141,7 +141,7 @@ let project = Project(
                 base: [
                     "DEVELOPMENT_TEAM": devTeam,
                     "CODE_SIGN_STYLE": "Automatic",
-                    "MARKETING_VERSION": "1.3.0",
+                    "MARKETING_VERSION": "1.4.0",
                     "CURRENT_PROJECT_VERSION": "1",
                 ]
             )
